@@ -8,7 +8,7 @@ how to fix it, for the hosting the site runs on. It is built for the people who 
 most of the web without a security team: small businesses, associations, freelancers
 and the agencies who build their sites.
 
-[![CI](https://github.com/Daruilem/vigilo/actions/workflows/ci.yml/badge.svg)](https://github.com/Daruilem/vigilo/actions/workflows/ci.yml)
+[![CI](https://github.com/daruilem/Vigilo/actions/workflows/ci.yml/badge.svg)](https://github.com/daruilem/Vigilo/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Next.js](https://img.shields.io/badge/next.js-16-black)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -75,7 +75,7 @@ docker compose up --build
 Requires Python 3.10+ and Node.js 22+.
 
 ```bash
-git clone https://github.com/Daruilem/vigilo.git
+git clone https://github.com/daruilem/Vigilo.git
 cd vigilo
 
 # API

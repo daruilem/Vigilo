@@ -108,3 +108,18 @@ describe("Report in Arabic", () => {
     expect(screen.getByRole("button", { name: MESSAGES.ar.report.downloadPdf })).toBeInTheDocument();
   });
 });
+
+describe("Grade explanation", () => {
+  it("opens the A to F scale with the site's grade and score", async () => {
+    const user = userEvent.setup();
+    render(<Report report={report([passed])} onNewCheck={() => {}} />);
+    const toggle = screen.getByRole("button", { name: t.grades.toggle("D") });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("heading", { name: t.grades.title })).toBeInTheDocument();
+    const current = screen.getAllByRole("listitem").find((li) => li.getAttribute("aria-current") === "true");
+    expect(current).toHaveTextContent(t.grades.meanings.D);
+    expect(screen.getByText(t.grades.yourScore(54))).toBeInTheDocument();
+  });
+});

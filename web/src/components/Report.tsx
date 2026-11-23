@@ -9,6 +9,7 @@ import { useI18n } from "@/i18n/client";
 import { countBySeverity, sectionNumber, splitFindings } from "@/lib/report";
 import type { Platform, ScanReport } from "@/lib/types";
 
+import { GradeScale } from "./GradeScale";
 import { GradeStamp } from "./GradeStamp";
 import { IssueSection } from "./IssueSection";
 import { Label, Section, SectionNumber } from "./Section";
@@ -38,6 +39,8 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
   // One hosting choice for the whole report: a site has a single hosting.
   const [platform, setPlatform] = useState<Platform>("apache");
   const [showPassed, setShowPassed] = useState(false);
+  const [showScale, setShowScale] = useState(false);
+  const scaleId = useId();
   const [pdf, setPdf] = useState<{ state: "idle" | "loading" | "failed"; message?: string }>({ state: "idle" });
 
   async function downloadPdf() {
@@ -116,10 +119,27 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
                   {counts.map(([severity, n]) => `${n} ${t.severity[severity].toLowerCase()}`).join(" · ")}
                 </p>
               )}
+              <button
+                type="button"
+                aria-expanded={showScale}
+                aria-controls={scaleId}
+                onClick={() => setShowScale((v) => !v)}
+                className="mt-2 min-h-11 cursor-pointer text-sm underline underline-offset-4 hover:text-stamp print:hidden"
+              >
+                {showScale ? t.grades.hide : t.grades.toggle(report.grade)}
+              </button>
             </div>
           </div>
         </div>
       </Section>
+
+      <div id={scaleId} hidden={!showScale}>
+        {showScale && (
+          <Section labelledBy={`${scaleId}-title`} rail={<Label>{t.grades.rail}</Label>}>
+            <GradeScale id={`${scaleId}-title`} current={report.grade} score={report.score} />
+          </Section>
+        )}
+      </div>
 
       {issues.length > 0 && (
         <p className="mb-2 text-sm text-muted md:ms-[208px] print:hidden">{t.report.hostingNote}</p>

@@ -101,6 +101,25 @@ export const de: Messages = {
     notGraded: "Ohne Wertung",
     notGradedHint: "Rechtlicher Punkt: Er ändert die Note nicht.",
   },
+  grades: {
+    rail: "Note",
+    title: "Was die Note bedeutet",
+    intro: "Die Note fasst die gefundenen Sicherheitsprobleme zusammen, von A (am besten) bis F (am schlechtesten).",
+    toggle: (grade: string) => `Was bedeutet die Note ${grade}?`,
+    hide: "Erklärung ausblenden",
+    points: "Punkte",
+    thisSite: "Diese Website",
+    meanings: {
+      A: "Sehr gut. Nur kleine Details zu verbessern.",
+      B: "Gut. Einige Punkte, die Sie bei Gelegenheit beheben sollten.",
+      C: "Befriedigend. Mehrere Schwächen: Planen Sie die Korrekturen in den nächsten Wochen.",
+      D: "Schwach. Ernste Schwächen: Beginnen Sie jetzt mit den schwerwiegendsten Punkten.",
+      F: "Mangelhaft. Besucher oder Daten sind ernsthaft gefährdet: Handeln Sie sofort.",
+    },
+    howCalculated:
+      "Jede Website startet mit 100 Punkten. Jedes Problem zieht je nach Schwere Punkte ab: kritisch 40, hoch 20, mittel 10, niedrig 3. Eine Warnung zieht die Hälfte ab. Rechtliche Punkte ändern die Note nicht.",
+    yourScore: (score: number) => `Diese Website hat ${score} von 100 Punkten erreicht.`,
+  },
   severity: {
     critical: "Kritisch",
     high: "Hoch",
@@ -176,7 +195,6 @@ export const de: Messages = {
         title: "So wird die Note berechnet",
         items: [
           "Jede Website startet mit 100 Punkten. Jedes Problem zieht Punkte ab: kritisch 40, hoch 20, mittel 10, niedrig 3. Eine Warnung zieht die Hälfte ab.",
-          "A: ab 90. B: 80 bis 89. C: 65 bis 79. D: 50 bis 64. F: unter 50.",
           "Datenschutz- und Rechtspunkte stehen im Bericht, ändern die Note aber nicht.",
         ],
       },

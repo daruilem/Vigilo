@@ -28,6 +28,13 @@ class Labels:
     all_clear: str
     footer: str
     page: Callable[[int], str]
+    scale_title: str
+    scale_intro: str
+    meanings: dict[str, str]
+    points: str
+    this_site: str
+    how_calculated: str
+    your_score: Callable[[int], str]
 
 
 def _en_plural(n: int, one: str, many: str) -> str:
@@ -73,6 +80,19 @@ LABELS: dict[str, Labels] = {
         all_clear="No problem was found. Keep your software up to date and check again in a few months.",
         footer="Vigilo · passive security check-up · this report was not stored",
         page=lambda n: f"Page {n}",
+        scale_title="What the grade means",
+        scale_intro="The grade sums up the security problems found on the site, from A (best) to F (worst).",
+        meanings={
+            "A": "Very good. Only small details to improve.",
+            "B": "Good. A few points to fix when you have time.",
+            "C": "Fair. Several weaknesses: plan the fixes in the coming weeks.",
+            "D": "Weak. Serious weaknesses: start with the most severe points now.",
+            "F": "Poor. Visitors or data are at real risk: act right away.",
+        },
+        points="points",
+        this_site="This site",
+        how_calculated="Every site starts with 100 points. Each problem removes points according to its severity: critical 40, high 20, medium 10, low 3. A warning removes half. Legal points do not change the grade.",
+        your_score=lambda s: f"This site scored {s} points out of 100.",
     ),
     "fr": Labels(
         title="Bilan de sécurité",
@@ -108,6 +128,19 @@ LABELS: dict[str, Labels] = {
         all_clear="Aucun problème trouvé. Gardez vos logiciels à jour et relancez une analyse dans quelques mois.",
         footer="Vigilo · bilan de sécurité passif · ce rapport n'a pas été conservé",
         page=lambda n: f"Page {n}",
+        scale_title="Ce que signifie la note",
+        scale_intro="La note résume les problèmes de sécurité trouvés sur le site, de A (la meilleure) à F (la moins bonne).",
+        meanings={
+            "A": "Très bien. Seuls quelques détails à améliorer.",
+            "B": "Bien. Quelques points à corriger quand vous avez le temps.",
+            "C": "Moyen. Plusieurs faiblesses : prévoyez les corrections dans les semaines qui viennent.",
+            "D": "Faible. Des faiblesses sérieuses : commencez dès maintenant par les points les plus graves.",
+            "F": "Mauvais. Les visiteurs ou les données sont réellement exposés : agissez tout de suite.",
+        },
+        points="points",
+        this_site="Ce site",
+        how_calculated="Chaque site part de 100 points. Chaque problème retire des points selon sa gravité : critique 40, élevé 20, moyen 10, faible 3. Un avertissement en retire la moitié. Les points juridiques ne changent pas la note.",
+        your_score=lambda s: f"Ce site a obtenu {s} points sur 100.",
     ),
     "de": Labels(
         title="Sicherheitscheck",
@@ -143,6 +176,19 @@ LABELS: dict[str, Labels] = {
         all_clear="Kein Problem gefunden. Halten Sie Ihre Software aktuell und prüfen Sie in einigen Monaten erneut.",
         footer="Vigilo · passiver Sicherheitscheck · dieser Bericht wurde nicht gespeichert",
         page=lambda n: f"Seite {n}",
+        scale_title="Was die Note bedeutet",
+        scale_intro="Die Note fasst die gefundenen Sicherheitsprobleme zusammen, von A (am besten) bis F (am schlechtesten).",
+        meanings={
+            "A": "Sehr gut. Nur kleine Details zu verbessern.",
+            "B": "Gut. Einige Punkte, die Sie bei Gelegenheit beheben sollten.",
+            "C": "Befriedigend. Mehrere Schwächen: Planen Sie die Korrekturen in den nächsten Wochen.",
+            "D": "Schwach. Ernste Schwächen: Beginnen Sie jetzt mit den schwerwiegendsten Punkten.",
+            "F": "Mangelhaft. Besucher oder Daten sind ernsthaft gefährdet: Handeln Sie sofort.",
+        },
+        points="Punkte",
+        this_site="Diese Website",
+        how_calculated="Jede Website startet mit 100 Punkten. Jedes Problem zieht je nach Schwere Punkte ab: kritisch 40, hoch 20, mittel 10, niedrig 3. Eine Warnung zieht die Hälfte ab. Rechtliche Punkte ändern die Note nicht.",
+        your_score=lambda s: f"Diese Website hat {s} von 100 Punkten erreicht.",
     ),
     "ar": Labels(
         title="الفحص الأمني",
@@ -190,6 +236,19 @@ LABELS: dict[str, Labels] = {
         all_clear="لم يُعثر على أي مشكلة. حافظ على تحديث برامجك وأعد الفحص بعد بضعة أشهر.",
         footer="Vigilo · فحص أمني سلبي · لم يُحفظ هذا التقرير",
         page=lambda n: f"صفحة {n}",
+        scale_title="ماذا يعني التقييم",
+        scale_intro="يلخّص التقييم مشاكل الأمان التي عُثر عليها في الموقع، من A (الأفضل) إلى F (الأسوأ).",
+        meanings={
+            "A": "ممتاز. لم يتبقَّ سوى تفاصيل صغيرة للتحسين.",
+            "B": "جيد. بعض النقاط التي يمكن إصلاحها عندما يتسنى لك الوقت.",
+            "C": "مقبول. عدة نقاط ضعف: خطّط لإصلاحها خلال الأسابيع القادمة.",
+            "D": "ضعيف. نقاط ضعف خطيرة: ابدأ الآن بأخطر النقاط.",
+            "F": "سيئ. الزوار أو البيانات معرّضون لخطر حقيقي: تصرّف فورًا.",
+        },
+        points="نقطة",
+        this_site="هذا الموقع",
+        how_calculated="يبدأ كل موقع بـ 100 نقطة، وكل مشكلة تُنقص نقاطًا حسب خطورتها: حرِجة 40، مرتفعة 20، متوسطة 10، منخفضة 3. والتحذير يُنقص النصف. النقاط القانونية لا تغيّر التقييم.",
+        your_score=lambda s: f"حصل هذا الموقع على {s} نقطة من 100.",
     ),
 }
 

@@ -105,6 +105,10 @@ def _embed_latin_runs(text: str) -> str:
             core = core[1:]
         elif core.endswith(")") and core.count(")") > core.count("("):
             core = core[:-1]
+        # A bracket left dangling at the edge belongs to the Arabic text around it.
+        core = core.rstrip(" (").lstrip(" )")
+        if not core:
+            return run
         start = run.index(core)
         return run[:start] + "‪" + core + "‬" + run[start + len(core) :]
 
@@ -153,7 +157,8 @@ class Writer:
         if not self.rtl:
             return Paragraph(escape(text).replace("\n", "<br/>"), style)
         shaped = arabic_reshaper.reshape(_embed_latin_runs(text))
-        lines = _wrap(shaped, style.fontName, style.fontSize, width or self.width)
+        # Small safety margin: ReportLab must never re-wrap a line we already ordered.
+        lines = _wrap(shaped, style.fontName, style.fontSize, (width or self.width) * 0.96)
         return Paragraph("<br/>".join(escape(_visual_rtl(line)) for line in lines), style)
 
 
@@ -447,6 +452,75 @@ def _summary_list(writer: Writer, findings: Sequence[Finding], color: Any) -> Ta
     return table
 
 
+# Grade boundaries, mirroring scoring.GRADES. The en dash is the typographic range sign.
+GRADE_BANDS = (("A", "90–100"), ("B", "80–89"), ("C", "65–79"), ("D", "50–64"), ("F", "0–49"))  # noqa: RUF001
+
+
+def _grade_scale(writer: Writer, labels: Labels, report: ScanReport) -> list[Flowable]:
+    """The A to F scale in plain words, with the site's own grade marked."""
+    letter_style = ParagraphStyle(
+        name="band", fontName="Serif-Bold", fontSize=13, leading=15, textColor=STAMP, alignment=1
+    )
+    range_style = ParagraphStyle(
+        name="range",
+        fontName="Sans" if writer.rtl else "Mono",
+        fontSize=7.5,
+        leading=10,
+        textColor=MUTED,
+        alignment=1,
+    )
+    widths = (34, 92, writer.width - 126)
+    rows, current_row = [], None
+    for index, (letter, band) in enumerate(GRADE_BANDS):
+        is_current = letter == report.grade
+        meaning = labels.meanings[letter]
+        if is_current:
+            current_row = index
+            meaning = f"{labels.this_site}: {meaning}"
+        text = writer.para(
+            meaning,
+            writer.style("Sans-SemiBold" if is_current else "Sans", 9, INK, leading=12),
+            widths[2] - 10,
+        )
+        cells = [
+            Paragraph(letter, letter_style),
+            writer.para(f"{band} {labels.points}", range_style, widths[1] - 8),
+            text,
+        ]
+        rows.append(cells[::-1] if writer.rtl else cells)
+    table = Table(rows, colWidths=widths[::-1] if writer.rtl else widths)
+    style = [
+        ("LINEABOVE", (0, 0), (-1, 0), 0.9, INK),
+        ("LINEBELOW", (0, 0), (-1, -1), 0.5, RULE),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]
+    if current_row is not None:
+        edge = -1 if writer.rtl else 0
+        style.append(
+            (
+                "LINEBEFORE" if not writer.rtl else "LINEAFTER",
+                (edge, current_row),
+                (edge, current_row),
+                3,
+                STAMP,
+            )
+        )
+    table.setStyle(TableStyle(style))
+    return [
+        writer.para(labels.scale_title, writer.style("Serif", 13, INK, leading=17)),
+        writer.para(labels.scale_intro, writer.style("Sans", 9, INK, leading=13, spaceAfter=6)),
+        table,
+        writer.para(
+            labels.how_calculated, writer.style("Sans", 8.5, MUTED, leading=12, spaceBefore=6)
+        ),
+        writer.para(
+            labels.your_score(report.score), writer.style("Sans-SemiBold", 9, INK, spaceBefore=3)
+        ),
+    ]
+
+
 def render_report(
     report: ScanReport, language: str = "en", platform: Platform = Platform.APACHE
 ) -> bytes:
@@ -562,6 +636,11 @@ def render_report(
                 ]
             ),
         ]
+
+    story += [
+        HRFlowable(width="100%", thickness=0.6, color=RULE, spaceBefore=10, spaceAfter=8),
+        KeepTogether(_grade_scale(writer, labels, report)),
+    ]
 
     def decorate(canvas: Any, document: Any) -> None:
         canvas.saveState()

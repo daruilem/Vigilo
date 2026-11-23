@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { GradeScale } from "@/components/GradeScale";
 import { Label, Section, SectionNumber } from "@/components/Section";
 import { getMessages, isLocale } from "@/i18n";
 import { sectionNumber } from "@/lib/report";
@@ -50,6 +51,11 @@ export default async function MethodPage({ params }: PageProps<"/[lang]/method">
                   </li>
                 ))}
               </ul>
+              {index === t.method.sections.length - 1 && (
+                <div className="mt-8">
+                  <GradeScale headingLevel="h3" />
+                </div>
+              )}
             </div>
           </Section>
         );

@@ -103,6 +103,25 @@ export const en = {
     notGraded: "Not graded",
     notGradedHint: "Legal point: it does not change the grade.",
   },
+  grades: {
+    rail: "Grade",
+    title: "What the grade means",
+    intro: "The grade sums up the security problems found on the site, from A (best) to F (worst).",
+    toggle: (grade: string) => `What does grade ${grade} mean?`,
+    hide: "Hide the explanation",
+    points: "points",
+    thisSite: "This site",
+    meanings: {
+      A: "Very good. Only small details to improve.",
+      B: "Good. A few points to fix when you have time.",
+      C: "Fair. Several weaknesses: plan the fixes in the coming weeks.",
+      D: "Weak. Serious weaknesses: start with the most severe points now.",
+      F: "Poor. Visitors or data are at real risk: act right away.",
+    } as Record<string, string>,
+    howCalculated:
+      "Every site starts with 100 points. Each problem removes points according to its severity: critical 40, high 20, medium 10, low 3. A warning removes half. Legal points do not change the grade.",
+    yourScore: (score: number) => `This site scored ${score} points out of 100.`,
+  },
   severity: {
     critical: "Critical",
     high: "High",
@@ -178,7 +197,6 @@ export const en = {
         title: "How the grade is calculated",
         items: [
           "Every site starts at 100 points. Each problem removes points: critical 40, high 20, medium 10, low 3. A warning removes half.",
-          "A: 90 and above. B: 80 to 89. C: 65 to 79. D: 50 to 64. F: below 50.",
           "Privacy and legal points are listed in the report but do not change the grade.",
         ],
       },

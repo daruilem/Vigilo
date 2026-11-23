@@ -101,6 +101,25 @@ export const fr: Messages = {
     notGraded: "Non noté",
     notGradedHint: "Point juridique : il ne change pas la note.",
   },
+  grades: {
+    rail: "Note",
+    title: "Ce que signifie la note",
+    intro: "La note résume les problèmes de sécurité trouvés sur le site, de A (la meilleure) à F (la moins bonne).",
+    toggle: (grade: string) => `Que signifie la note ${grade} ?`,
+    hide: "Masquer l'explication",
+    points: "points",
+    thisSite: "Ce site",
+    meanings: {
+      A: "Très bien. Seuls quelques détails à améliorer.",
+      B: "Bien. Quelques points à corriger quand vous avez le temps.",
+      C: "Moyen. Plusieurs faiblesses : prévoyez les corrections dans les semaines qui viennent.",
+      D: "Faible. Des faiblesses sérieuses : commencez dès maintenant par les points les plus graves.",
+      F: "Mauvais. Les visiteurs ou les données sont réellement exposés : agissez tout de suite.",
+    },
+    howCalculated:
+      "Chaque site part de 100 points. Chaque problème retire des points selon sa gravité : critique 40, élevé 20, moyen 10, faible 3. Un avertissement en retire la moitié. Les points juridiques ne changent pas la note.",
+    yourScore: (score: number) => `Ce site a obtenu ${score} points sur 100.`,
+  },
   severity: {
     critical: "Critique",
     high: "Élevé",
@@ -176,7 +195,6 @@ export const fr: Messages = {
         title: "Comment la note est calculée",
         items: [
           "Chaque site part de 100 points. Chaque problème retire des points : critique 40, élevé 20, moyen 10, faible 3. Un avertissement en retire la moitié.",
-          "A : 90 et plus. B : de 80 à 89. C : de 65 à 79. D : de 50 à 64. F : moins de 50.",
           "Les points de vie privée et juridiques figurent dans le rapport mais ne changent pas la note.",
         ],
       },
