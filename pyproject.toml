@@ -1,0 +1,82 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vigilo"
+version = "0.1.0"
+description = "Free, readable security check-up for small websites: TLS, security headers and exposed files, with fixes per hosting."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+keywords = ["security", "scanner", "tls", "http-headers", "gdpr", "audit"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+]
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.6",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "rich>=13.7",
+    "dnspython>=2.6",
+    "reportlab>=4.2",
+    "arabic-reshaper>=3.0",
+    "python-bidi>=0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.5",
+    "mypy>=1.10",
+]
+
+[project.scripts]
+vigilo = "vigilo.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vigilo"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+ignore = ["S101"]  # assert is fine in tests
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S"]
+# reader-facing prose and code snippets
+"src/vigilo/guidance.py" = ["E501"]
+"src/vigilo/checks/email.py" = ["E501"]
+"src/vigilo/checks/privacy.py" = ["E501"]
+"src/vigilo/checks/cms.py" = ["E501"]
+"src/vigilo/pdf/*.py" = ["E501"]  # page layout values
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+# These libraries ship without type information.
+module = ["reportlab.*", "arabic_reshaper.*", "bidi.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Custom ReportLab flowables subclass an untyped base class.
+module = ["vigilo.pdf"]
+disallow_subclassing_any = false
