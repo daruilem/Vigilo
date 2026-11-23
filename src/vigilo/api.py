@@ -7,6 +7,10 @@ Two ways to scan:
 
 Nothing is stored: reports only exist in the response.
 
+Before an active scan, the user must prove they control the domain (see
+`vigilo.ownership`): POST /api/v1/ownership/challenge gives a code to publish in DNS or
+in a file, POST /api/v1/ownership/verify checks it and returns a signed ownership pass.
+
 Abuse protection, applied before any network activity:
 - explicit authorisation from the user,
 - a limit per client IP (behind trusted proxies only, X-Forwarded-For is believed),
@@ -33,6 +37,7 @@ from vigilo.clientip import client_ip, parse_networks
 from vigilo.errors import ScanError
 from vigilo.i18n import localize_event, localize_report, translate
 from vigilo.models import Platform, ScanReport
+from vigilo.ownership import Method, create_challenge, verify_ownership
 from vigilo.pdf import file_name, render_report
 from vigilo.ratelimit import RateLimiter
 from vigilo.scanner import Event, scan
@@ -62,10 +67,12 @@ DOCS_ENABLED = os.environ.get("VIGILO_DOCS", "0") == "1"
 
 MAX_BODY_BYTES = 1_000_000
 PDFS_PER_WINDOW = _env_int("VIGILO_PDFS_PER_WINDOW", 30)
+VERIFICATIONS_PER_WINDOW = _env_int("VIGILO_VERIFICATIONS_PER_WINDOW", 20)
 
 limiter = RateLimiter(SCANS_PER_WINDOW, WINDOW_SECONDS)
 pdf_limiter = RateLimiter(PDFS_PER_WINDOW, WINDOW_SECONDS)
 target_limiter = RateLimiter(SCANS_PER_TARGET, WINDOW_SECONDS)
+ownership_limiter = RateLimiter(VERIFICATIONS_PER_WINDOW, WINDOW_SECONDS)
 
 
 class ScanSlots:
@@ -302,4 +309,92 @@ async def report_pdf(body: PdfRequest, request: Request) -> Response:
         content=pdf,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{file_name(body.report)}"'},
+    )
+
+
+# --- Domain ownership ------------------------------------------------------------------
+
+MAX_TOKEN_LENGTH = 200
+
+
+class ChallengeRequest(BaseModel):
+    target: str = Field(min_length=1, max_length=MAX_TARGET_LENGTH, examples=["example.com"])
+    lang: Language = "en"
+
+
+class DnsProof(BaseModel):
+    name: str
+    type: Literal["TXT"] = "TXT"
+    value: str
+
+
+class FileProof(BaseModel):
+    url: str
+    content: str
+
+
+class ChallengeResponse(BaseModel):
+    domain: str
+    token: str
+    expires_at: int = Field(description="Unix time after which the code is refused.")
+    dns: DnsProof
+    file: FileProof
+
+
+class VerifyRequest(BaseModel):
+    target: str = Field(min_length=1, max_length=MAX_TARGET_LENGTH)
+    token: str = Field(min_length=1, max_length=MAX_TOKEN_LENGTH)
+    method: Method
+    lang: Language = "en"
+
+
+class VerifyResponse(BaseModel):
+    domain: str
+    method: Method
+    ownership_pass: str = Field(description="Signed proof, required to start an active scan.")
+    expires_at: int
+
+
+def _ownership_domain(request: Request, target: str, lang: str) -> str:
+    if not ownership_limiter.allow(_ip_of(request)):
+        raise HTTPException(
+            status_code=429,
+            detail=_error("rate_limited", errors.VERIFICATIONS_LIMITED, lang),
+        )
+    try:
+        return parse_target(target).hostname
+    except ScanError as exc:
+        raise HTTPException(status_code=422, detail=_error(exc.code, exc.message, lang)) from exc
+
+
+@app.post("/api/v1/ownership/challenge")
+async def ownership_challenge(body: ChallengeRequest, request: Request) -> ChallengeResponse:
+    """A verification code to publish in DNS or in a file. No network activity."""
+    domain = _ownership_domain(request, body.target, body.lang)
+    challenge = create_challenge(domain)
+    return ChallengeResponse(
+        domain=domain,
+        token=challenge.token,
+        expires_at=challenge.expires_at,
+        dns=DnsProof(name=challenge.dns_name, value=challenge.dns_value),
+        file=FileProof(url=challenge.file_url, content=challenge.token),
+    )
+
+
+@app.post("/api/v1/ownership/verify")
+async def ownership_verify(body: VerifyRequest, request: Request) -> VerifyResponse:
+    """Check the published code. Only contacts the domain if the code was issued for it."""
+    domain = _ownership_domain(request, body.target, body.lang)
+    try:
+        proof = await verify_ownership(domain, body.token, body.method)
+    except ScanError as exc:
+        status = 400 if exc.code == "invalid_challenge" else 422
+        raise HTTPException(
+            status_code=status, detail=_error(exc.code, exc.message, body.lang)
+        ) from exc
+    return VerifyResponse(
+        domain=proof.domain,
+        method=proof.method,
+        ownership_pass=proof.token,
+        expires_at=proof.expires_at,
     )

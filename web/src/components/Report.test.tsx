@@ -122,4 +122,9 @@ describe("Grade explanation", () => {
     expect(current).toHaveTextContent(t.grades.meanings.D);
     expect(screen.getByText(t.grades.yourScore(54))).toBeInTheDocument();
   });
+
+  it("hides the active scan preview unless it is turned on", () => {
+    renderReport();
+    expect(screen.queryByRole("heading", { name: t.active.title })).not.toBeInTheDocument();
+  });
 });

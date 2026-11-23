@@ -12,8 +12,12 @@ import type { Platform, ScanReport } from "@/lib/types";
 import { GradeScale } from "./GradeScale";
 import { GradeStamp } from "./GradeStamp";
 import { IssueSection } from "./IssueSection";
+import { OwnershipVerification } from "./OwnershipVerification";
 import { Label, Section, SectionNumber } from "./Section";
 import { SeverityMark } from "./SeverityMark";
+
+// The verified active scan is still being built: hidden unless explicitly turned on.
+const ACTIVE_SCAN_ENABLED = process.env.NEXT_PUBLIC_VIGILO_ACTIVE_SCAN === "1";
 
 interface ReportProps {
   report: ScanReport;
@@ -238,6 +242,8 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
           </div>
         </Section>
       )}
+
+      {ACTIVE_SCAN_ENABLED && <OwnershipVerification target={report.target} />}
     </article>
   );
 });

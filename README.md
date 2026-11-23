@@ -126,7 +126,9 @@ what to do.
 | `VIGILO_DOCS` | `0` | Set to `1` to serve the interactive API docs at `/docs` |
 | `VIGILO_SIGNING_KEY` | random at start-up | Secret used to sign reports. Set it when running several API processes. |
 | `VIGILO_PDFS_PER_WINDOW` | `30` | PDF downloads per client IP per window |
+| `VIGILO_VERIFICATIONS_PER_WINDOW` | `20` | Domain ownership requests per client IP per window |
 | `NEXT_PUBLIC_VIGILO_API_URL` | `http://localhost:8000` | API address used by the web interface (build time) |
+| `NEXT_PUBLIC_VIGILO_ACTIVE_SCAN` | `0` | Set to `1` to show the domain ownership verification (preview of the active scan, in progress) |
 
 ## Security of Vigilo itself
 

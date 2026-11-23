@@ -53,8 +53,9 @@ export function IssueSection({ finding, number, platform, onPlatformChange }: Is
               <Label>{t.report.observed}</Label>
             </p>
             <dl className="overflow-x-auto border border-rule px-3.5 py-2.5 font-mono text-sm leading-5">
-              {finding.observed.map((o) => (
-                <div key={o.label} className="flex flex-wrap gap-x-4">
+              {finding.observed.map((o, index) => (
+                // Labels repeat (an active scan finding lists several addresses).
+                <div key={index} className="flex flex-wrap gap-x-4">
                   <dt dir="auto" className="text-muted">{o.label}</dt>
                   <dd dir="auto" className="font-medium break-all text-high">{o.value}</dd>
                 </div>

@@ -1,4 +1,12 @@
-import type { Platform, ScanFailure, ScanReport, StepState } from "./types";
+import type {
+  OwnershipChallenge,
+  OwnershipProof,
+  Platform,
+  ProofMethod,
+  ScanFailure,
+  ScanReport,
+  StepState,
+} from "./types";
 
 export const API_URL = (process.env.NEXT_PUBLIC_VIGILO_API_URL ?? "http://localhost:8000").replace(
   /\/$/,
@@ -79,4 +87,47 @@ export async function fetchReportPdf(report: ScanReport, lang: string, platform:
 export function pdfFileName(report: ScanReport): string {
   const safe = report.target.replace(/[^a-z0-9.-]/gi, "-");
   return `vigilo-${safe}-${report.finished_at.slice(0, 10)}.pdf`;
+}
+
+/** An error answered by the API. `message` is already translated; empty if unreachable. */
+export class ApiError extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError("network", "");
+  }
+  if (!response.ok) {
+    const data = (await response.json().catch(() => null)) as { detail?: Partial<ScanFailure> } | null;
+    throw new ApiError(data?.detail?.code ?? "internal", data?.detail?.message ?? "");
+  }
+  return (await response.json()) as T;
+}
+
+/** A verification code to publish in DNS or in a file. */
+export function requestChallenge(target: string, lang: string): Promise<OwnershipChallenge> {
+  return postJson("/api/v1/ownership/challenge", { target, lang });
+}
+
+/** Asks the server to look for the published code. */
+export function verifyOwnership(
+  target: string,
+  token: string,
+  method: ProofMethod,
+  lang: string,
+): Promise<OwnershipProof> {
+  return postJson("/api/v1/ownership/verify", { target, token, method, lang });
 }

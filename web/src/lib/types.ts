@@ -54,3 +54,22 @@ export interface ScanFailure {
   code: string;
   message: string;
 }
+
+export type ProofMethod = "dns" | "file";
+
+/** Mirrors api.ChallengeResponse: what to publish to prove control of a domain. */
+export interface OwnershipChallenge {
+  domain: string;
+  token: string;
+  expires_at: number; // Unix time, seconds
+  dns: { name: string; type: "TXT"; value: string };
+  file: { url: string; content: string };
+}
+
+/** Mirrors api.VerifyResponse. */
+export interface OwnershipProof {
+  domain: string;
+  method: ProofMethod;
+  ownership_pass: string;
+  expires_at: number;
+}

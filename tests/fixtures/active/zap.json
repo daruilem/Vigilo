@@ -1,0 +1,260 @@
+{
+  "@programName": "ZAP",
+  "@version": "2.16.0",
+  "@generated": "Tue, 24 Nov 2026 10:00:00",
+  "site": [
+    {
+      "@name": "https://shop.example",
+      "@host": "shop.example",
+      "@port": "443",
+      "@ssl": "true",
+      "alerts": [
+        {
+          "pluginid": "10038",
+          "alertRef": "10038",
+          "alert": "Content Security Policy (CSP) Header Not Set",
+          "name": "Content Security Policy (CSP) Header Not Set",
+          "riskcode": "2",
+          "confidence": "3",
+          "riskdesc": "",
+          "desc": "<p>...</p>",
+          "instances": [
+            {
+              "uri": "https://shop.example/",
+              "method": "GET",
+              "param": "",
+              "attack": "",
+              "evidence": "",
+              "otherinfo": ""
+            }
+          ],
+          "count": "1",
+          "solution": "<p>...</p>",
+          "otherinfo": "",
+          "reference": "<p>https://owasp.org/www-community/attacks/</p>",
+          "cweid": "693",
+          "wascid": "0",
+          "sourceid": "1"
+        },
+        {
+          "pluginid": "40012",
+          "alertRef": "40012",
+          "alert": "Cross Site Scripting (Reflected)",
+          "name": "Cross Site Scripting (Reflected)",
+          "riskcode": "3",
+          "confidence": "2",
+          "riskdesc": "",
+          "desc": "<p>...</p>",
+          "instances": [
+            {
+              "uri": "https://shop.example/search?q=%3Cscript%3Ealert(1)%3C%2Fscript%3E",
+              "method": "GET",
+              "param": "q",
+              "attack": "",
+              "evidence": "<script>alert(1)</script>",
+              "otherinfo": ""
+            }
+          ],
+          "count": "1",
+          "solution": "<p>...</p>",
+          "otherinfo": "",
+          "reference": "<p>https://owasp.org/www-community/attacks/</p>",
+          "cweid": "79",
+          "wascid": "0",
+          "sourceid": "1"
+        },
+        {
+          "pluginid": "10010",
+          "alertRef": "10010",
+          "alert": "Cookie No HttpOnly Flag",
+          "name": "Cookie No HttpOnly Flag",
+          "riskcode": "1",
+          "confidence": "2",
+          "riskdesc": "",
+          "desc": "<p>...</p>",
+          "instances": [
+            {
+              "uri": "https://shop.example/",
+              "method": "GET",
+              "param": "session",
+              "attack": "",
+              "evidence": "Set-Cookie: session=SECRET-SESSION-ID",
+              "otherinfo": ""
+            }
+          ],
+          "count": "1",
+          "solution": "<p>...</p>",
+          "otherinfo": "",
+          "reference": "<p>https://owasp.org/www-community/attacks/</p>",
+          "cweid": "1004",
+          "wascid": "0",
+          "sourceid": "1"
+        },
+        {
+          "pluginid": "10202",
+          "alertRef": "10202",
+          "alert": "Absence of Anti-CSRF Tokens",
+          "name": "Absence of Anti-CSRF Tokens",
+          "riskcode": "2",
+          "confidence": "1",
+          "riskdesc": "",
+          "desc": "<p>...</p>",
+          "instances": [
+            {
+              "uri": "https://shop.example/form/0",
+              "method": "GET",
+              "param": "",
+              "attack": "",
+              "evidence": "<form action=...>",
+              "otherinfo": ""
+            },
+            {
+              "uri": "https://shop.example/form/1",
+              "method": "GET",
+              "param": "",
+              "attack": "",
+              "evidence": "<form action=...>",
+              "otherinfo": ""
+            },
+            {
+              "uri": "https://shop.example/form/2",
+              "method": "GET",
+              "param": "",
+              "attack": "",
+              "evidence": "<form action=...>",
+              "otherinfo": ""
+            },
+            {
+              "uri": "https://shop.example/form/3",
+              "method": "GET",
+              "param": "",
+              "attack": "",
+              "evidence": "<form action=...>",
+              "otherinfo": ""
+            },
+            {
+              "uri": "https://shop.example/form/4",
+              "method": "GET",
+              "param": "",
+              "attack": "",
+              "evidence": "<form action=...>",
+              "otherinfo": ""
+            },
+            {
+              "uri": "https://shop.example/form/5",
+              "method": "GET",
+              "param": "",
+              "attack": "",
+              "evidence": "<form action=...>",
+              "otherinfo": ""
+            },
+            {
+              "uri": "https://shop.example/form/6",
+              "method": "GET",
+              "param": "",
+              "attack": "",
+              "evidence": "<form action=...>",
+              "otherinfo": ""
+            }
+          ],
+          "count": "7",
+          "solution": "<p>...</p>",
+          "otherinfo": "",
+          "reference": "<p>https://owasp.org/www-community/attacks/</p>",
+          "cweid": "352",
+          "wascid": "0",
+          "sourceid": "1"
+        },
+        {
+          "pluginid": "10096",
+          "alertRef": "10096",
+          "alert": "Timestamp Disclosure - Unix",
+          "name": "Timestamp Disclosure - Unix",
+          "riskcode": "0",
+          "confidence": "1",
+          "riskdesc": "",
+          "desc": "<p>...</p>",
+          "instances": [
+            {
+              "uri": "https://shop.example/",
+              "method": "GET",
+              "param": "",
+              "attack": "",
+              "evidence": "",
+              "otherinfo": ""
+            }
+          ],
+          "count": "1",
+          "solution": "<p>...</p>",
+          "otherinfo": "",
+          "reference": "<p>https://owasp.org/www-community/attacks/</p>",
+          "cweid": "497",
+          "wascid": "0",
+          "sourceid": "1"
+        },
+        {
+          "pluginid": "40018",
+          "alertRef": "40018",
+          "alert": "SQL Injection",
+          "name": "SQL Injection",
+          "riskcode": "3",
+          "confidence": "0",
+          "riskdesc": "",
+          "desc": "<p>...</p>",
+          "instances": [
+            {
+              "uri": "https://shop.example/?id=1",
+              "method": "GET",
+              "param": "id",
+              "attack": "",
+              "evidence": "",
+              "otherinfo": ""
+            }
+          ],
+          "count": "1",
+          "solution": "<p>...</p>",
+          "otherinfo": "",
+          "reference": "<p>https://owasp.org/www-community/attacks/</p>",
+          "cweid": "89",
+          "wascid": "0",
+          "sourceid": "1"
+        }
+      ]
+    },
+    {
+      "@name": "https://other.example",
+      "@host": "other.example",
+      "@port": "443",
+      "@ssl": "true",
+      "alerts": [
+        {
+          "pluginid": "40012",
+          "alertRef": "40012",
+          "alert": "Cross Site Scripting (Reflected)",
+          "name": "Cross Site Scripting (Reflected)",
+          "riskcode": "3",
+          "confidence": "3",
+          "riskdesc": "",
+          "desc": "<p>...</p>",
+          "instances": [
+            {
+              "uri": "https://other.example/?q=1",
+              "method": "GET",
+              "param": "q",
+              "attack": "",
+              "evidence": "",
+              "otherinfo": ""
+            }
+          ],
+          "count": "1",
+          "solution": "<p>...</p>",
+          "otherinfo": "",
+          "reference": "<p>https://owasp.org/www-community/attacks/</p>",
+          "cweid": "79",
+          "wascid": "0",
+          "sourceid": "1"
+        }
+      ]
+    }
+  ]
+}

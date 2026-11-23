@@ -27,6 +27,16 @@ def _canonical(report: ScanReport) -> bytes:
     return json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
 
+def tag(purpose: str, *parts: str, key: bytes = _KEY) -> str:
+    """HMAC of `parts` for one `purpose`.
+
+    The purpose is part of the signed data, so a value signed for one use (for example a
+    domain verification code) can never be accepted for another (an ownership pass).
+    """
+    message = "\0".join((purpose, *parts)).encode()
+    return hmac.new(key, message, hashlib.sha256).hexdigest()
+
+
 def sign(report: ScanReport, key: bytes = _KEY) -> ScanReport:
     digest = hmac.new(key, _canonical(report), hashlib.sha256).hexdigest()
     return report.model_copy(update={"signature": digest})
