@@ -5,7 +5,9 @@ import { useEffect, useId, useRef, useState } from "react";
 import { DATE_LOCALES } from "@/i18n";
 import { useI18n } from "@/i18n/client";
 import { ApiError, requestChallenge, verifyOwnership } from "@/lib/api";
-import type { OwnershipChallenge, OwnershipProof, ProofMethod } from "@/lib/types";
+import type { OwnershipChallenge, OwnershipProof, ProofMethod, ScanReport } from "@/lib/types";
+
+import { ActiveScan } from "./ActiveScan";
 
 import { CopyButton } from "./CopyButton";
 import { Label, Section } from "./Section";
@@ -25,7 +27,13 @@ const TIME_OPTIONS: Intl.DateTimeFormatOptions = {
  * 3. the domain is verified.
  * The ownership pass only lives in this component's state: nothing is stored.
  */
-export function OwnershipVerification({ target }: { target: string }) {
+export function OwnershipVerification({
+  target,
+  onActiveReport,
+}: {
+  target: string;
+  onActiveReport: (report: ScanReport) => void;
+}) {
   const { t, locale } = useI18n();
   const id = useId();
   const [challenge, setChallenge] = useState<OwnershipChallenge | null>(null);
@@ -210,7 +218,9 @@ export function OwnershipVerification({ target }: { target: string }) {
                 <div className="mt-1 flex flex-col gap-2">
                   <p>{a.validUntil(time(proof.expires_at))}</p>
                   <p className="text-sm text-muted">{a.keepProof}</p>
-                  <p className="text-sm">{a.comingSoon}</p>
+                  {challenge && (
+                    <ActiveScan proof={proof} token={challenge.token} onReport={onActiveReport} />
+                  )}
                 </div>
               )}
             </Step>

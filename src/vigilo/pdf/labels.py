@@ -9,9 +9,12 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Labels:
     title: str
+    title_active: str
     checked_on: str
     method: str
     method_value: str
+    method_value_active: str
+    separate_grade: str
     hosting: str
     grade: str
     issues: Callable[[int], str]
@@ -27,6 +30,7 @@ class Labels:
     not_checked_intro: str
     all_clear: str
     footer: str
+    footer_active: str
     page: Callable[[int], str]
     scale_title: str
     scale_intro: str
@@ -52,9 +56,12 @@ def _ar_count(n: int, one: str, two: str, few: str, many: str) -> str:
 LABELS: dict[str, Labels] = {
     "en": Labels(
         title="Security check-up",
+        title_active="Active scan",
         checked_on="Checked on",
         method="Method",
         method_value="Passive. One request per resource. No attack tested.",
+        method_value_active="Active, on a verified domain. Safe checks with Nuclei and OWASP ZAP.",
+        separate_grade="This grade only covers the active scan. It is separate from the check-up grade.",
         hosting="Fixes shown for",
         grade="GRADE",
         issues=lambda n: (
@@ -79,6 +86,7 @@ LABELS: dict[str, Labels] = {
         not_checked_intro="These results are missing, so the grade may be too optimistic.",
         all_clear="No problem was found. Keep your software up to date and check again in a few months.",
         footer="Vigilo · passive security check-up · this report was not stored",
+        footer_active="Vigilo · active scan of a verified domain · only the consent record was kept",
         page=lambda n: f"Page {n}",
         scale_title="What the grade means",
         scale_intro="The grade sums up the security problems found on the site, from A (best) to F (worst).",
@@ -96,9 +104,12 @@ LABELS: dict[str, Labels] = {
     ),
     "fr": Labels(
         title="Bilan de sécurité",
+        title_active="Analyse active",
         checked_on="Analysé le",
         method="Méthode",
         method_value="Passive. Une requête par ressource. Aucune attaque testée.",
+        method_value_active="Active, sur un domaine vérifié. Vérifications sans danger avec Nuclei et OWASP ZAP.",
+        separate_grade="Cette note ne concerne que l'analyse active. Elle est distincte de la note du bilan.",
         hosting="Corrections affichées pour",
         grade="NOTE",
         issues=lambda n: (
@@ -127,6 +138,7 @@ LABELS: dict[str, Labels] = {
         not_checked_intro="Ces résultats manquent, la note est donc peut-être trop optimiste.",
         all_clear="Aucun problème trouvé. Gardez vos logiciels à jour et relancez une analyse dans quelques mois.",
         footer="Vigilo · bilan de sécurité passif · ce rapport n'a pas été conservé",
+        footer_active="Vigilo · analyse active d'un domaine vérifié · seul le consentement a été conservé",
         page=lambda n: f"Page {n}",
         scale_title="Ce que signifie la note",
         scale_intro="La note résume les problèmes de sécurité trouvés sur le site, de A (la meilleure) à F (la moins bonne).",
@@ -144,9 +156,12 @@ LABELS: dict[str, Labels] = {
     ),
     "de": Labels(
         title="Sicherheitscheck",
+        title_active="Aktiver Scan",
         checked_on="Geprüft am",
         method="Methode",
         method_value="Passiv. Eine Anfrage pro Ressource. Kein Angriff getestet.",
+        method_value_active="Aktiv, auf einer verifizierten Domain. Ungefährliche Prüfungen mit Nuclei und OWASP ZAP.",
+        separate_grade="Diese Note gilt nur für den aktiven Scan. Sie ist von der Note des Sicherheitschecks getrennt.",
         hosting="Korrekturen für",
         grade="NOTE",
         issues=lambda n: (
@@ -175,6 +190,7 @@ LABELS: dict[str, Labels] = {
         not_checked_intro="Diese Ergebnisse fehlen, die Note ist daher vielleicht zu optimistisch.",
         all_clear="Kein Problem gefunden. Halten Sie Ihre Software aktuell und prüfen Sie in einigen Monaten erneut.",
         footer="Vigilo · passiver Sicherheitscheck · dieser Bericht wurde nicht gespeichert",
+        footer_active="Vigilo · aktiver Scan einer verifizierten Domain · nur die Einwilligung wurde gespeichert",
         page=lambda n: f"Seite {n}",
         scale_title="Was die Note bedeutet",
         scale_intro="Die Note fasst die gefundenen Sicherheitsprobleme zusammen, von A (am besten) bis F (am schlechtesten).",
@@ -192,9 +208,12 @@ LABELS: dict[str, Labels] = {
     ),
     "ar": Labels(
         title="الفحص الأمني",
+        title_active="الفحص النشط",
         checked_on="تاريخ الفحص",
         method="المنهجية",
         method_value="سلبي. طلب واحد لكل مورد. لم يُختبر أي هجوم.",
+        method_value_active="نشط، على نطاق تم التحقق منه. فحوص آمنة باستخدام Nuclei وOWASP ZAP.",
+        separate_grade="يخص هذا التقدير الفحص النشط وحده، وهو منفصل عن تقدير الفحص الأساسي.",
         hosting="الإصلاحات المعروضة لـ",
         grade="التقييم",
         issues=lambda n: (
@@ -235,6 +254,7 @@ LABELS: dict[str, Labels] = {
         not_checked_intro="هذه النتائج مفقودة، لذا قد يكون التقييم متفائلًا أكثر من اللازم.",
         all_clear="لم يُعثر على أي مشكلة. حافظ على تحديث برامجك وأعد الفحص بعد بضعة أشهر.",
         footer="Vigilo · فحص أمني سلبي · لم يُحفظ هذا التقرير",
+        footer_active="Vigilo · فحص نشط لنطاق تم التحقق منه · لم يُحفظ سوى سجل الموافقة",
         page=lambda n: f"صفحة {n}",
         scale_title="ماذا يعني التقييم",
         scale_intro="يلخّص التقييم مشاكل الأمان التي عُثر عليها في الموقع، من A (الأفضل) إلى F (الأسوأ).",

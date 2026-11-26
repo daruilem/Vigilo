@@ -91,8 +91,12 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # The browser tests run on a build with the active scan screens turned on.
       - name: Browser tests (Playwright, axe)
+        env:
+          NEXT_PUBLIC_VIGILO_ACTIVE_SCAN: "1"
         run: |
+          npm run build
           npx playwright install --with-deps chromium
           npm run e2e
       - if: failure()

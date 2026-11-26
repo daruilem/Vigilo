@@ -26,6 +26,10 @@ interface ReportProps {
   onNewCheck: () => void;
   /** Summary of the previous check of this site kept on this device, if any. */
   previous?: Snapshot | null;
+  /** An active scan finished: show its report. */
+  onActiveReport?: (report: ScanReport) => void;
+  /** On an active scan report: back to the check-up it was started from. */
+  onBack?: () => void;
 }
 
 const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
@@ -38,11 +42,12 @@ const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
 };
 
 export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Report(
-  { report, onNewCheck, previous = null },
+  { report, onNewCheck, previous = null, onActiveReport, onBack },
   headingRef,
 ) {
   const { t, locale } = useI18n();
   const { issues, passed, errors } = splitFindings(report.findings);
+  const active = report.kind === "active";
   const counts = countBySeverity(issues);
   // One hosting choice for the whole report: a site has a single hosting.
   const [platform, setPlatform] = useState<Platform>("apache");
@@ -82,7 +87,7 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
               tabIndex={-1}
               className="font-serif text-[32px] leading-10 font-semibold md:text-[40px] md:leading-[48px]"
             >
-              {t.report.title}
+              {active ? t.active.reportTitle : t.report.title}
             </h1>
             <p dir="ltr" className="mt-2 font-mono text-base leading-6 wrap-anywhere md:text-xl md:leading-7">
               https://{report.target}/
@@ -91,9 +96,9 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
               <dt className="text-muted">{t.report.checkedOn}</dt>
               <dd className="font-mono">{new Intl.DateTimeFormat(DATE_LOCALES[locale], DATE_OPTIONS).format(new Date(report.finished_at))}</dd>
               <dt className="text-muted">{t.report.method}</dt>
-              <dd>{t.report.methodValue}</dd>
+              <dd>{active ? t.active.reportMethod : t.report.methodValue}</dd>
               <dt className="text-muted">{t.report.kept}</dt>
-              <dd>{t.report.keptValue}</dd>
+              <dd>{active ? t.active.reportKept : t.report.keptValue}</dd>
             </dl>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap print:hidden">
               <button
@@ -107,10 +112,10 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
               </button>
               <button
                 type="button"
-                onClick={onNewCheck}
+                onClick={active && onBack ? onBack : onNewCheck}
                 className="h-12 cursor-pointer rounded-xs border border-ink px-5 font-semibold"
               >
-                {t.report.newCheck}
+                {active && onBack ? t.active.back : t.report.newCheck}
               </button>
             </div>
             <p role="status" className="mt-3 text-sm text-high print:hidden">
@@ -127,6 +132,7 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
                   {counts.map(([severity, n]) => `${n} ${t.severity[severity].toLowerCase()}`).join(" · ")}
                 </p>
               )}
+              {active && <p className="mt-1 max-w-[220px] text-sm text-muted">{t.active.separateGrade}</p>}
               <button
                 type="button"
                 aria-expanded={showScale}
@@ -149,9 +155,9 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
         )}
       </div>
 
-      {previous && <Progress report={report} previous={previous} />}
+      {!active && previous && <Progress report={report} previous={previous} />}
 
-      {issues.length > 0 && (
+      {issues.some((f) => Object.keys(f.fixes).length > 0) && (
         <p className="mb-2 text-sm text-muted md:ms-[208px] print:hidden">{t.report.hostingNote}</p>
       )}
 
@@ -249,9 +255,11 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
         </Section>
       )}
 
-      {!previous && <Progress report={report} previous={null} />}
+      {!active && !previous && <Progress report={report} previous={null} />}
 
-      {ACTIVE_SCAN_ENABLED && <OwnershipVerification target={report.target} />}
+      {ACTIVE_SCAN_ENABLED && !active && onActiveReport && (
+        <OwnershipVerification target={report.target} onActiveReport={onActiveReport} />
+      )}
     </article>
   );
 });

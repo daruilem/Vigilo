@@ -33,6 +33,8 @@ export interface Finding {
 
 export interface ScanReport {
   target: string;
+  /** Passive check-up, or active scan of a verified domain (graded separately). */
+  kind?: "passive" | "active";
   started_at: string;
   finished_at: string;
   score: number;
@@ -72,4 +74,10 @@ export interface OwnershipProof {
   method: ProofMethod;
   ownership_pass: string;
   expires_at: number;
+}
+
+/** Mirrors api.ActiveScanStarted. */
+export interface ActiveScanStarted {
+  job_id: string;
+  domain: string;
 }

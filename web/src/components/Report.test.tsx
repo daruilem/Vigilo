@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { MESSAGES } from "@/i18n";
 import { I18nProvider } from "@/i18n/client";
@@ -126,5 +126,19 @@ describe("Grade explanation", () => {
   it("hides the active scan preview unless it is turned on", () => {
     renderReport();
     expect(screen.queryByRole("heading", { name: t.active.title })).not.toBeInTheDocument();
+  });
+});
+
+describe("Report of an active scan", () => {
+  it("has its own title, says its grade is separate and goes back to the check-up", async () => {
+    const onBack = vi.fn();
+    const active = { ...report(issues), kind: "active" as const };
+    render(<Report report={active} onNewCheck={() => {}} onBack={onBack} />);
+    expect(screen.getByRole("heading", { level: 1, name: t.active.reportTitle })).toBeInTheDocument();
+    expect(screen.getByText(t.active.separateGrade)).toBeInTheDocument();
+    expect(screen.getByText(t.active.reportMethod)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: t.progress.offerTitle })).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: t.active.back }));
+    expect(onBack).toHaveBeenCalled();
   });
 });

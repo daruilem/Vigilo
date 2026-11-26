@@ -94,7 +94,7 @@ CATEGORIES: tuple[Category, ...] = (
             "tools that search the internet for exactly these flaws."
         ),
         recommendation=(
-            "Update the software named below to its latest version. If you cannot, ask "
+            "Update the software named above to its latest version. If you cannot, ask "
             "your web developer or host to do it as soon as possible."
         ),
         matches=lambda r: bool(r.cve) or "cve" in r.tags,
@@ -108,7 +108,7 @@ CATEGORIES: tuple[Category, ...] = (
         ),
         recommendation=(
             "Ask your web developer to check and escape every input at the addresses "
-            "below. If the site uses a CMS, update it and its plugins first: the flaw is "
+            "above. If the site uses a CMS, update it and its plugins first: the flaw is "
             "often in an old plugin."
         ),
         matches=_any(
@@ -126,7 +126,7 @@ CATEGORIES: tuple[Category, ...] = (
         ),
         recommendation=(
             "Set the Secure, HttpOnly and SameSite flags on the cookies at the addresses "
-            "below. In most CMS this is a setting or a small plugin; otherwise ask your "
+            "above. In most CMS this is a setting or a small plugin; otherwise ask your "
             "developer."
         ),
         matches=_cwe(614, 1004, 1275),
@@ -168,7 +168,7 @@ CATEGORIES: tuple[Category, ...] = (
             "example sharing visitor data with any other website."
         ),
         recommendation=(
-            "Review the setting named below with your host or developer, and use the "
+            "Review the setting named above with your host or developer, and use the "
             "strictest value that still lets the site work."
         ),
         matches=_any(_tags("misconfig", "misconfiguration", "cors"), _cwe(16, 264, 352, 942, 1021)),

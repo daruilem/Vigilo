@@ -95,3 +95,20 @@ def test_file_name_is_safe():
 )
 def test_latin_runs_stay_intact_in_arabic(logical, expected_inside):
     assert expected_inside in _visual_rtl(_embed_latin_runs(logical))
+
+
+@pytest.mark.parametrize("language", ["en", "fr", "de", "ar"])
+def test_active_scan_reports_render_with_their_own_labels(language):
+    from vigilo.pdf.labels import LABELS
+
+    active = sample_report().model_copy(update={"kind": "active"})
+    assert render_report(localize_report(active, language), language).startswith(b"%PDF")
+    labels = LABELS[language]
+    assert labels.title_active != labels.title
+    assert labels.footer_active != labels.footer
+
+
+def test_active_scan_pdf_file_name():
+    active = sample_report().model_copy(update={"kind": "active"})
+    assert file_name(active) == "vigilo-active-shop.example-2026-11-23.pdf"
+    assert file_name(sample_report()) == "vigilo-shop.example-2026-11-23.pdf"

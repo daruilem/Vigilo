@@ -527,6 +527,9 @@ def render_report(
     """Render a (translated) report as PDF bytes."""
     _register_fonts()
     labels = LABELS.get(language, LABELS["en"])
+    active = report.kind == "active"
+    title = labels.title_active if active else labels.title
+    method_value = labels.method_value_active if active else labels.method_value
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -537,7 +540,7 @@ def render_report(
         bottomMargin=PAGE_MARGIN,
         title=f"Vigilo · {report.target}",
         author="Vigilo",
-        subject=labels.title,
+        subject=title,
     )
     writer = Writer(language, doc.width)
 
@@ -557,7 +560,7 @@ def render_report(
     meta = writer.style("Sans", 8.5, MUTED, leading=12)
     left_width = doc.width - 100
     left: list[Flowable] = [
-        writer.para(labels.title, writer.style("Serif-Bold", 24, INK, leading=28), left_width),
+        writer.para(title, writer.style("Serif-Bold", 24, INK, leading=28), left_width),
         Paragraph(
             escape(f"https://{report.target}/"),
             ParagraphStyle(
@@ -576,13 +579,15 @@ def render_report(
             meta,
             left_width,
         ),
-        writer.para(f"{labels.method}: {labels.method_value}", meta, left_width),
+        writer.para(f"{labels.method}: {method_value}", meta, left_width),
         writer.para(f"{labels.hosting}: {PLATFORM_NAMES[platform.value]}", meta, left_width),
         Spacer(1, 8),
         writer.para(labels.issues(len(issues)), writer.style("Sans-SemiBold", 11, INK), left_width),
     ]
     if counts:
         left.append(writer.para(" · ".join(counts), meta, left_width))
+    if active:
+        left.append(writer.para(labels.separate_grade, meta, left_width))
     stamp = grade_stamp(writer, report.grade, labels.grade)
     header = Table(
         [[stamp, left]] if writer.rtl else [[left, stamp]],
@@ -660,7 +665,8 @@ def render_report(
         canvas.line(PAGE_MARGIN, PAGE_MARGIN - 6, width - PAGE_MARGIN, PAGE_MARGIN - 6)
         canvas.setFont("Sans", 7.5)
         canvas.setFillColor(MUTED)
-        footer, page = writer.visual(labels.footer), writer.visual(labels.page(document.page))
+        footer_text = labels.footer_active if active else labels.footer
+        footer, page = writer.visual(footer_text), writer.visual(labels.page(document.page))
         if writer.rtl:
             canvas.drawRightString(width - PAGE_MARGIN, PAGE_MARGIN - 16, footer)
             canvas.drawString(PAGE_MARGIN, PAGE_MARGIN - 16, page)
@@ -675,4 +681,5 @@ def render_report(
 
 def file_name(report: ScanReport) -> str:
     safe = "".join(ch if ch.isalnum() or ch in ".-" else "-" for ch in report.target)
-    return f"vigilo-{safe}-{report.finished_at:%Y-%m-%d}.pdf"
+    kind = "active-" if report.kind == "active" else ""
+    return f"vigilo-{kind}{safe}-{report.finished_at:%Y-%m-%d}.pdf"

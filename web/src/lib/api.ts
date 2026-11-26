@@ -1,4 +1,5 @@
 import type {
+  ActiveScanStarted,
   OwnershipChallenge,
   OwnershipProof,
   Platform,
@@ -25,12 +26,25 @@ export interface ScanHandlers {
 }
 
 /**
- * Starts a scan and streams its progress (Server-Sent Events).
+ * Starts a passive check-up and streams its progress (Server-Sent Events).
  * Returns a function that stops listening.
  */
 export function streamScan(target: string, lang: string, handlers: ScanHandlers): () => void {
   const params = new URLSearchParams({ target, authorized: "true", lang });
-  const source = new EventSource(`${API_URL}/api/v1/scans/stream?${params}`);
+  return streamEvents(`${API_URL}/api/v1/scans/stream?${params}`, handlers);
+}
+
+/** Follows a running active scan, from its start. Same events as the passive check-up. */
+export function streamActiveScan(jobId: string, lang: string, handlers: ScanHandlers): () => void {
+  const params = new URLSearchParams({ lang });
+  return streamEvents(
+    `${API_URL}/api/v1/active-scans/${encodeURIComponent(jobId)}/stream?${params}`,
+    handlers,
+  );
+}
+
+function streamEvents(url: string, handlers: ScanHandlers): () => void {
+  const source = new EventSource(url);
   let finished = false;
 
   const finish = () => {
@@ -54,8 +68,8 @@ export function streamScan(target: string, lang: string, handlers: ScanHandlers)
     handlers.onFailure(JSON.parse((event as MessageEvent<string>).data) as ScanFailure);
   });
 
-  // Native connection error. EventSource would retry forever, and a retry would start a
-  // new scan, so stop here.
+  // Native connection error. EventSource would retry forever, and for the passive
+  // check-up a retry would start a new scan, so stop here.
   source.onerror = () => {
     if (finished) return;
     finish();
@@ -86,7 +100,8 @@ export async function fetchReportPdf(report: ScanReport, lang: string, platform:
 
 export function pdfFileName(report: ScanReport): string {
   const safe = report.target.replace(/[^a-z0-9.-]/gi, "-");
-  return `vigilo-${safe}-${report.finished_at.slice(0, 10)}.pdf`;
+  const kind = report.kind === "active" ? "active-" : "";
+  return `vigilo-${kind}${safe}-${report.finished_at.slice(0, 10)}.pdf`;
 }
 
 /** An error answered by the API. `message` is already translated; empty if unreachable. */
@@ -130,4 +145,23 @@ export function verifyOwnership(
   lang: string,
 ): Promise<OwnershipProof> {
   return postJson("/api/v1/ownership/verify", { target, token, method, lang });
+}
+
+/**
+ * Starts an active scan of a verified domain. The server checks the published proof
+ * again before starting, then answers with the id of the background job.
+ */
+export function startActiveScan(
+  target: string,
+  token: string,
+  ownershipPass: string,
+  lang: string,
+): Promise<ActiveScanStarted> {
+  return postJson("/api/v1/active-scans", {
+    target,
+    token,
+    ownership_pass: ownershipPass,
+    accept_terms: true,
+    lang,
+  });
 }

@@ -15,6 +15,13 @@ All notable changes to Vigilo are listed here. The format follows
 - **Local lab** (`docker-compose.lab.yml`): OWASP Juice Shop as `juice.lab` on a network
   without internet access, and a lab mode limited to `.lab` and `.test` names.
 - `vigilo prepare-active` installs a pinned version of the Nuclei templates.
+- **Active scan in the web interface**: conditions to accept, live log, full-page active
+  report with its own grade, PDF titled and signed off as an active scan, back to the
+  check-up. Browser tests cover the whole flow with accessibility checks.
+
+### Fixed
+
+- Advice for active scan results pointed "below" to information shown above it.
 
 ## [0.1.0] - 2026-11-26
 

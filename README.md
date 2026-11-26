@@ -190,7 +190,7 @@ what to do.
 | `VIGILO_SCAN_NETWORK` | `bridge` | Docker network of the scanning containers |
 | `VIGILO_LAB_TARGETS` | *(none)* | **Local lab only.** Lab hosts and where to reach them, e.g. `juice.lab=http://127.0.0.1:8080` |
 | `NEXT_PUBLIC_VIGILO_API_URL` | `http://localhost:8000` | API address used by the web interface (build time) |
-| `NEXT_PUBLIC_VIGILO_ACTIVE_SCAN` | `0` | Set to `1` to show the domain ownership verification in the report (the active scan screens are in progress) |
+| `NEXT_PUBLIC_VIGILO_ACTIVE_SCAN` | `0` | Set to `1` to offer the active scan under each report (build time). Turn it on together with `VIGILO_ACTIVE_SCAN` on the API |
 
 ## Security of Vigilo itself
 
@@ -316,6 +316,10 @@ equivalents), so a checkbox is not enough here:
    tool's description of the problem. Evidence, extracted values, requests and responses
    are dropped. Problems the passive check-up already reports are not counted twice.
 
+In the web interface, the active scan is offered under each check-up report: prove
+ownership, read and accept the conditions, then follow the live log. The active report
+opens full page, with its own grade and PDF, and leads back to the check-up.
+
 The scan runs in the background (several minutes) and its log is followed live:
 `POST /api/v1/active-scans` returns a job id, `GET /api/v1/active-scans/{id}/stream`
 sends the same `progress` / `report` / `failure` events as the passive scan.
@@ -424,7 +428,7 @@ npm run e2e                       # browser tests with accessibility checks
 - [ ] Optional share links, scheduled re-checks and certificate expiry alerts
 - [x] PDF reports, signed reports, WordPress plugin updates, nested SPF lookups
 - [x] Verified active scan: ownership proof, sandboxed Nuclei and ZAP, local lab
-- [ ] Active scan screens in the web interface and its section in the PDF
+- [x] Active scan screens in the web interface, active report and PDF
 - [ ] WordPress plugins checked against a vulnerability database (needs an API key)
 
 ## License

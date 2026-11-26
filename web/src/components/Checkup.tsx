@@ -18,7 +18,14 @@ type Phase =
   | { kind: "idle"; target: string }
   | { kind: "scanning"; target: string; steps: Step[] }
   | { kind: "failed"; target: string; steps: Step[]; failure: ScanFailure | null }
-  | { kind: "report"; target: string; report: ScanReport; previous: Snapshot | null };
+  | {
+      kind: "report";
+      target: string;
+      report: ScanReport;
+      previous: Snapshot | null;
+      /** On an active scan report: the check-up it was started from. */
+      back?: Phase;
+    };
 
 /** The whole check-up flow on one page: form, live log, then report or error. */
 export function Checkup() {
@@ -28,9 +35,11 @@ export function Checkup() {
   const stopRef = useRef<(() => void) | null>(null);
 
   // Move focus to the new heading when the screen changes, for keyboard and screen readers.
+  // Going from the check-up to an active scan report (and back) is a new screen too.
+  const screen = phase.kind === "report" ? `report-${phase.report.kind ?? "passive"}` : phase.kind;
   useEffect(() => {
-    if (phase.kind !== "idle") headingRef.current?.focus();
-  }, [phase.kind]);
+    if (screen !== "idle") headingRef.current?.focus();
+  }, [screen]);
 
   function start(target: string) {
     stopRef.current?.();
@@ -74,6 +83,10 @@ export function Checkup() {
         report={phase.report}
         previous={phase.previous}
         onNewCheck={() => reset()}
+        onActiveReport={(active) =>
+          setPhase({ kind: "report", target: phase.target, report: active, previous: null, back: phase })
+        }
+        onBack={phase.back ? () => setPhase(phase.back as Phase) : undefined}
       />
     );
   }

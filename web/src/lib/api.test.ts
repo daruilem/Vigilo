@@ -1,35 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { FakeEventSource } from "@/test/fakeEventSource";
 import { report } from "@/test/fixtures";
 
 import { fetchReportPdf, pdfFileName, streamScan, type ScanHandlers } from "./api";
-
-class FakeEventSource {
-  static last: FakeEventSource;
-  url: string;
-  closed = false;
-  onerror: (() => void) | null = null;
-  private listeners: Record<string, ((event: MessageEvent<string>) => void)[]> = {};
-
-  constructor(url: string) {
-    this.url = url;
-    FakeEventSource.last = this;
-  }
-
-  addEventListener(type: string, listener: (event: MessageEvent<string>) => void) {
-    (this.listeners[type] ??= []).push(listener);
-  }
-
-  emit(type: string, data: unknown) {
-    for (const listener of this.listeners[type] ?? []) {
-      listener(new MessageEvent(type, { data: JSON.stringify(data) }));
-    }
-  }
-
-  close() {
-    this.closed = true;
-  }
-}
 
 function handlers(): ScanHandlers {
   return { onPlan: vi.fn(), onStep: vi.fn(), onReport: vi.fn(), onFailure: vi.fn() };

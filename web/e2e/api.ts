@@ -101,3 +101,71 @@ export async function simulateApi(page: Page, reports: ScanReport[]): Promise<vo
     }),
   );
 }
+
+/** The ownership proof and an active scan of shop.example, answered by a simulated API. */
+export async function simulateActiveScan(page: Page): Promise<void> {
+  const token = "abc.1800000000.def";
+  await page.route("**/api/v1/ownership/challenge", (route) =>
+    route.fulfill({
+      json: {
+        domain: "shop.example",
+        token,
+        expires_at: 1_800_000_000,
+        dns: { name: "_vigilo.shop.example", type: "TXT", value: `vigilo-verification=${token}` },
+        file: { url: "https://shop.example/.well-known/vigilo-verification.txt", content: token },
+      },
+      headers: { "Access-Control-Allow-Origin": "*" },
+    }),
+  );
+  await page.route("**/api/v1/ownership/verify", (route) =>
+    route.fulfill({
+      json: { domain: "shop.example", method: "dns", ownership_pass: "dns.1800000000.sig", expires_at: 1_800_000_000 },
+      headers: { "Access-Control-Allow-Origin": "*" },
+    }),
+  );
+  await page.route("**/api/v1/active-scans", (route) =>
+    route.fulfill({
+      status: 202,
+      json: { job_id: "job1", domain: "shop.example" },
+      headers: { "Access-Control-Allow-Origin": "*" },
+    }),
+  );
+  const steps = [
+    { id: "proof", label: "Proof of ownership checked again" },
+    { id: "nuclei", label: "Known vulnerabilities and exposed files (Nuclei)" },
+    { id: "zap", label: "Crawl of the site and passive analysis (OWASP ZAP)" },
+    { id: "analysis", label: "Analysis of the results" },
+  ];
+  const activeReport: ScanReport = {
+    ...makeReport("improved"),
+    kind: "active",
+    score: 80,
+    grade: "B",
+    findings: [
+      issue({
+        id: "active.nuclei.prometheus-metrics",
+        check: "active",
+        title: "Prometheus Metrics - Detect",
+        headline: "Private files or information can be read",
+        observed: [
+          { label: "Found by", value: "Nuclei (prometheus-metrics)" },
+          { label: "Address", value: "https://shop.example/metrics" },
+        ],
+        fixes: {},
+        recommendation: "Delete these files from the public folder.",
+      }),
+    ],
+  };
+  const events = [
+    ["progress", { type: "plan", steps }],
+    ...steps.map((s) => ["progress", { type: "step", id: s.id, state: "done" }]),
+    ["report", activeReport],
+  ] as const;
+  await page.route("**/api/v1/active-scans/job1/stream?*", (route) =>
+    route.fulfill({
+      status: 200,
+      headers: { "Content-Type": "text/event-stream", "Access-Control-Allow-Origin": "*" },
+      body: events.map(([name, data]) => `event: ${name}\ndata: ${JSON.stringify(data)}\n\n`).join(""),
+    }),
+  );
+}

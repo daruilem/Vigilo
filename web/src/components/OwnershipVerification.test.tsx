@@ -34,7 +34,7 @@ function setup(...responses: (Response | Error)[]) {
     return next ?? json({});
   });
   vi.stubGlobal("fetch", fetchMock);
-  render(<OwnershipVerification target="shop.example" />);
+  render(<OwnershipVerification target="shop.example" onActiveReport={() => {}} />);
   return { user: userEvent.setup(), fetchMock };
 }
 
