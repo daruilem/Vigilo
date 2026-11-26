@@ -21,6 +21,9 @@ CF_TRANSFORM = (
 # --- headlines ---------------------------------------------------------------------------
 
 HEADLINES: dict[str, dict[Status, str]] = {
+    "tls.https": {
+        Status.FAIL: "Your site cannot be opened securely (no HTTPS)",
+    },
     "tls.certificate": {
         Status.FAIL: "Browsers do not trust your certificate",
         Status.PASS: "Certificate is valid",
@@ -328,6 +331,9 @@ FIXES: dict[str, dict[Platform, Fix]] = {
         ),
     },
 }
+
+# No HTTPS at all: the fix is the same as for an untrusted certificate.
+FIXES["tls.https"] = FIXES["tls.certificate"]
 
 FOLLOW_UPS: dict[str, str] = {
     "headers.hsts": "only turn this on once every page and subdomain works over HTTPS.",

@@ -182,6 +182,7 @@ export const fr: Messages = {
         label: "Ce qui est vérifié",
         title: "La liste exacte",
         items: [
+          "HTTPS : le site répond bien par une connexion sécurisée.",
           "Certificat : reconnu par les navigateurs, couvre le domaine, jours avant expiration.",
           "Chiffrement : TLS 1.0 et 1.1 refusés, TLS 1.2 et 1.3 proposés (règles du BSI TR-03116-4).",
           "Redirection : les adresses en http:// sont envoyées vers https://.",

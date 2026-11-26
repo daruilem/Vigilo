@@ -32,7 +32,7 @@ what to do. Vigilo keeps the technical rigour and adds:
 
 | Area | Checks |
 |---|---|
-| TLS | Certificate trusted and covering the domain, days before expiry, TLS 1.0/1.1 refused, TLS 1.2/1.3 offered (rules from **BSI TR-03116-4**), HTTP to HTTPS redirect |
+| TLS | HTTPS offered at all, certificate trusted and covering the domain, days before expiry, TLS 1.0/1.1 refused, TLS 1.2/1.3 offered (rules from **BSI TR-03116-4**), HTTP to HTTPS redirect |
 | HTTP headers | HSTS, Content-Security-Policy, clickjacking protection, `nosniff`, Referrer-Policy, Permissions-Policy, software version disclosure |
 | Sensitive files | `/.git/HEAD`, `/.git/config`, `/.env`, common backups and database dumps. **Status code and size only: content is never read.** |
 | Email security | SPF (presence, `+all`, `?all`, duplicates, 10-lookup limit counted across nested includes), DMARC policy, DKIM under 15 common selectors. The mail provider is recognised from MX records to suggest a ready-made SPF record. |

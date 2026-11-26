@@ -184,6 +184,7 @@ export const en = {
         label: "What is checked",
         title: "The exact list",
         items: [
+          "HTTPS: the site answers on a secure connection at all.",
           "Certificate: trusted by browsers, covers the domain, days before expiry.",
           "Encryption: TLS 1.0 and 1.1 refused, TLS 1.2 and 1.3 offered (rules from BSI TR-03116-4).",
           "Redirect: plain http:// addresses are sent to https://.",

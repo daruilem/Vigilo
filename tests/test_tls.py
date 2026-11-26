@@ -98,3 +98,51 @@ def test_no_modern_protocol_is_critical():
     finding = protocols(TLSv1_2=False, TLSv1_3=False)["tls.modern-protocols"]
     assert finding.status is Status.FAIL
     assert finding.severity is Severity.CRITICAL
+
+
+# --- a site without HTTPS ------------------------------------------------------------------
+
+
+def _run_tls(monkeypatch, failure: Exception):
+    import asyncio
+    import ssl
+
+    import httpx
+
+    from vigilo import scoring
+    from vigilo.checks import tls
+    from vigilo.checks.base import ScanContext
+    from vigilo.target import Target
+
+    def refuse(host, port, address):
+        raise failure
+
+    monkeypatch.setattr(tls, "fetch_certificate", refuse)
+    monkeypatch.setattr(tls, "probe_protocol", lambda *a: pytest.fail("no probe expected"))
+    assert isinstance(ssl.SSLError(), OSError)  # why SSLError is re-raised first
+
+    async def go():
+        transport = httpx.MockTransport(lambda request: httpx.Response(200))
+        async with httpx.AsyncClient(transport=transport) as http:
+            ctx = ScanContext(target=Target("shop.example"), http=http)
+            return await tls.TlsCheck().run(ctx)
+
+    findings = asyncio.run(go())
+    return findings, scoring.score(findings)
+
+
+def test_site_without_https_fails_critically(monkeypatch):
+    findings, score = _run_tls(monkeypatch, ConnectionRefusedError(111, "refused"))
+    by_id = {f.id: f for f in findings}
+    assert set(by_id) == {"tls.https", "tls.https-redirect"}
+    assert by_id["tls.https"].status is Status.FAIL
+    assert by_id["tls.https"].severity is Severity.CRITICAL
+    assert by_id["tls.https-redirect"].status is Status.FAIL
+    assert score == 50
+
+
+def test_handshake_error_is_not_reported_as_missing_https(monkeypatch):
+    import ssl
+
+    with pytest.raises(ssl.SSLError):
+        _run_tls(monkeypatch, ssl.SSLError(1, "handshake failure"))

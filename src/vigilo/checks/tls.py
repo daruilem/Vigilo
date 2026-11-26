@@ -64,6 +64,11 @@ class TlsCheck(Check):
             cert = await asyncio.to_thread(fetch_certificate, host, port, address)
         except ssl.SSLCertVerificationError as exc:
             findings.append(_invalid_certificate(exc.verify_message or str(exc)))
+        except ssl.SSLError:
+            raise  # a handshake problem, not a missing HTTPS: reported as "could not check"
+        except OSError:
+            # Nothing answers on the HTTPS port: the protocol probes would only repeat it.
+            return [no_https(ctx.target.https_url), await _https_redirect(ctx)]
         else:
             findings.extend(evaluate_certificate(cert, datetime.now(timezone.utc)))
         probes = await asyncio.gather(
@@ -257,6 +262,26 @@ def evaluate_certificate(cert: CertificateInfo, now: datetime) -> list[Finding]:
         }
     )
     return [valid, expiry]
+
+
+def no_https(url: str) -> Finding:
+    return Finding(
+        id="tls.https",
+        check=CHECK,
+        title="HTTPS availability",
+        status=Status.FAIL,
+        severity=Severity.CRITICAL,
+        description=(
+            "Your site cannot be opened over a secure connection. Everything visitors send or "
+            "receive, including passwords and form entries, travels unencrypted and can be "
+            "read or changed on the way."
+        ),
+        recommendation=(
+            "Serve the site over HTTPS with a valid certificate. Free certificates are "
+            "available from Let's Encrypt."
+        ),
+        observed=[Observation(label=f"GET {url}", value="no answer")],
+    )
 
 
 def _invalid_certificate(reason: str) -> Finding:

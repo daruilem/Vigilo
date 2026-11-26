@@ -43,6 +43,10 @@ MESSAGES: dict[str, str] = {
     "{label}: could not be checked": "{label} : vérification impossible",
     "This check could not be completed, so its results are missing.": "Cette vérification n'a pas pu aboutir, ses résultats sont donc absents.",
     # --- headlines ----------------------------------------------------------------------
+    "Your site cannot be opened securely (no HTTPS)": "Votre site ne peut pas être ouvert de façon sécurisée (pas de HTTPS)",
+    "HTTPS availability": "Disponibilité de HTTPS",
+    "Your site cannot be opened over a secure connection. Everything visitors send or receive, including passwords and form entries, travels unencrypted and can be read or changed on the way.": "Votre site ne peut pas être ouvert par une connexion sécurisée. Tout ce que les visiteurs envoient ou reçoivent, y compris les mots de passe et les formulaires, circule en clair et peut être lu ou modifié en chemin.",
+    "Serve the site over HTTPS with a valid certificate. Free certificates are available from Let's Encrypt.": "Servez le site en HTTPS avec un certificat valide. Let's Encrypt fournit des certificats gratuits.",
     "Browsers do not trust your certificate": "Les navigateurs ne font pas confiance à votre certificat",
     "Certificate is valid": "Le certificat est valide",
     "Your certificate is about to expire": "Votre certificat va bientôt expirer",

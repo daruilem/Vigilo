@@ -52,6 +52,7 @@ def all_scenarios() -> list[Finding]:
         cert = tls.CertificateInfo("x", "R11", NOW, NOW + timedelta(days=days), ["shop.example"])
         findings += tls.evaluate_certificate(cert, NOW)
     findings.append(tls._invalid_certificate("certificate has expired"))
+    findings.append(tls.no_https("https://shop.example/"))
     for support in (
         {"TLSv1.0": True, "TLSv1.1": True, "TLSv1.2": True, "TLSv1.3": True},
         {"TLSv1.0": None, "TLSv1.1": None, "TLSv1.2": True, "TLSv1.3": False},

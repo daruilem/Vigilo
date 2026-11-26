@@ -182,6 +182,7 @@ export const de: Messages = {
         label: "Was geprüft wird",
         title: "Die genaue Liste",
         items: [
+          "HTTPS: Die Website ist überhaupt über eine sichere Verbindung erreichbar.",
           "Zertifikat: von Browsern anerkannt, gilt für die Domain, Tage bis zum Ablauf.",
           "Verschlüsselung: TLS 1.0 und 1.1 abgelehnt, TLS 1.2 und 1.3 angeboten (Regeln der BSI TR-03116-4).",
           "Weiterleitung: Adressen mit http:// werden auf https:// umgeleitet.",

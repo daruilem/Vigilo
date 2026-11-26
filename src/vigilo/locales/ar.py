@@ -43,6 +43,10 @@ MESSAGES: dict[str, str] = {
     "{label}: could not be checked": "{label}: تعذّر الفحص",
     "This check could not be completed, so its results are missing.": "لم يكتمل هذا الفحص، لذا نتائجه غير متوفرة.",
     # --- headlines ----------------------------------------------------------------------
+    "Your site cannot be opened securely (no HTTPS)": "لا يمكن فتح موقعك بشكل آمن (لا يوجد HTTPS)",
+    "HTTPS availability": "توفّر HTTPS",
+    "Your site cannot be opened over a secure connection. Everything visitors send or receive, including passwords and form entries, travels unencrypted and can be read or changed on the way.": "لا يمكن فتح موقعك عبر اتصال آمن. كل ما يرسله الزوار أو يستقبلونه، بما في ذلك كلمات المرور وبيانات النماذج، ينتقل دون تشفير ويمكن قراءته أو تعديله في الطريق.",
+    "Serve the site over HTTPS with a valid certificate. Free certificates are available from Let's Encrypt.": "قدّم الموقع عبر HTTPS بشهادة صالحة. يوفّر Let's Encrypt شهادات مجانية.",
     "Browsers do not trust your certificate": "المتصفحات لا تثق بشهادتك",
     "Certificate is valid": "الشهادة صالحة",
     "Your certificate is about to expire": "شهادتك على وشك الانتهاء",
