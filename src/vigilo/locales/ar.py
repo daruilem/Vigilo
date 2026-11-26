@@ -375,4 +375,10 @@ MESSAGES: dict[str, str] = {
     "Known vulnerabilities and exposed files (Nuclei)": "الثغرات المعروفة والملفات المكشوفة (Nuclei)",
     "Crawl of the site and passive analysis (OWASP ZAP)": "استكشاف الموقع والتحليل السلبي (OWASP ZAP)",
     "Analysis of the results": "تحليل النتائج",
+    # Ownership: HTML tag, automatic check, hosted platforms
+    "We did not find the Vigilo tag in the home page of {domain}. It must be in the <head> section, and the change must be saved and published.": "لم نجد وسم Vigilo في الصفحة الرئيسية لـ {domain}. يجب أن يكون داخل قسم <head>، ويجب حفظ التعديل ونشره.",
+    "The home page of {domain} has a Vigilo tag, but with another code. Replace it with the one shown, then try again.": "تحتوي الصفحة الرئيسية لـ {domain} على وسم Vigilo لكن برمز آخر. استبدله بالوسم المعروض، ثم حاول مجددًا.",
+    "The home page of {domain} redirects to {other}. Verify that address instead, or use the file or DNS method.": "تعيد الصفحة الرئيسية لـ {domain} التوجيه إلى {other}. تحقّق من هذا العنوان بدلًا من ذلك، أو استخدم طريقة الملف أو DNS.",
+    "The code is not published on {domain} yet: not in the home page, not in the file {url} and not in DNS. Vigilo keeps checking.": "لم يُنشر الرمز على {domain} بعد: لا في الصفحة الرئيسية، ولا في الملف {url}، ولا في DNS. يواصل Vigilo التحقق.",
+    "This website runs on {platform}, which manages its security and does not allow scanning its servers. The active scan does not apply to it.": "يعمل هذا الموقع على {platform}، التي تدير أمانه ولا تسمح بفحص خوادمها. لا ينطبق الفحص النشط على هذا الموقع.",
 }

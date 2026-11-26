@@ -19,6 +19,18 @@ All notable changes to Vigilo are listed here. The format follows
   report with its own grade, PDF titled and signed off as an active scan, back to the
   check-up. Browser tests cover the whole flow with accessibility checks.
 
+- **Easier proof of ownership**: an HTML tag method and a file at the site root join the
+  DNS record; a ready-made message (email, WhatsApp, copy) for whoever runs the site;
+  automatic checks of every method every 30 seconds; step-by-step guides per platform;
+  the pending code is kept in the browser so the owner can come back later.
+- Sites on hosted platforms (Shopify, Wix, Squarespace, Webflow) are not offered the
+  active scan: it would test the platform's servers.
+
+### Changed
+
+- The ownership file moved from `/.well-known/vigilo-verification.txt` to
+  `/vigilo-<id>.txt` at the root, easier to upload.
+
 ### Fixed
 
 - Advice for active scan results pointed "below" to information shown above it.

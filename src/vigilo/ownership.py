@@ -6,8 +6,15 @@ owner's permission is a criminal offence in most countries (for example section 
 the German Criminal Code). Vigilo therefore asks for a proof that only someone who
 controls the domain can give:
 
-1. DNS: a TXT record `_vigilo.<domain>` with the value `vigilo-verification=<code>`, or
-2. File: `https://<domain>/.well-known/vigilo-verification.txt` containing the code.
+1. HTML tag: `<meta name="vigilo-verification" content="<code>">` in the <head> of the home
+   page (the easiest for sites built with a CMS: most have a "header code" setting),
+2. File: `https://<domain>/vigilo-<id>.txt` at the root of the site, containing the code,
+3. DNS: a TXT record `_vigilo.<domain>` with the value `vigilo-verification=<code>`.
+
+These are the methods used to verify a site in Google Search Console, so web developers
+know them. The owner usually forwards the request to whoever runs their site, and Vigilo
+then checks all three methods by itself (`verify_any`), so nobody has to say which one
+was used.
 
 Nothing is stored on the server. The verification code carries its own expiry date and
 an HMAC signature bound to the domain, so Vigilo can check that it issued the code for
@@ -35,6 +42,7 @@ import httpx
 
 from vigilo import errors
 from vigilo.errors import ScanError
+from vigilo.htmlscan import read_page
 from vigilo.net import fetch_page, make_client
 from vigilo.signing import tag
 
@@ -42,8 +50,10 @@ CHALLENGE_LIFETIME = 24 * 3600
 PASS_LIFETIME = 24 * 3600
 RECORD_LABEL = "_vigilo"
 RECORD_PREFIX = "vigilo-verification="
-FILE_PATH = "/.well-known/vigilo-verification.txt"
+FILE_PREFIX = "vigilo-"
 MAX_FILE_BYTES = 1024
+META_NAME = "vigilo-verification"
+MAX_PAGE_BYTES = 1_000_000
 DNS_TIMEOUT = 5.0
 
 _CHALLENGE = "ownership-challenge"
@@ -52,8 +62,9 @@ _CHALLENGE_TAG_LENGTH = 32  # 128 bits: plenty for a code that lives 24 hours, a
 
 
 class Method(str, Enum):
-    DNS = "dns"
+    META = "meta"
     FILE = "file"
+    DNS = "dns"
 
 
 class OwnershipError(ScanError):
@@ -75,8 +86,16 @@ class Challenge:
         return RECORD_PREFIX + self.token
 
     @property
+    def file_name(self) -> str:
+        return f"{FILE_PREFIX}{self.token.split('.', 1)[0]}.txt"
+
+    @property
     def file_url(self) -> str:
-        return f"https://{self.domain}{FILE_PATH}"
+        return f"https://{self.domain}/{self.file_name}"
+
+    @property
+    def meta_tag(self) -> str:
+        return f'<meta name="{META_NAME}" content="{self.token}">'
 
 
 @dataclass(frozen=True)
@@ -180,7 +199,7 @@ async def _verify_file(
     challenge: Challenge, http: httpx.AsyncClient, base_url: str | None = None
 ) -> None:
     # `base_url` is only set for a lab host (see vigilo.lab), reached at a local address.
-    url = f"{base_url}{FILE_PATH}" if base_url else challenge.file_url
+    url = f"{base_url}/{challenge.file_name}" if base_url else challenge.file_url
     expected_host = urlsplit(url).hostname
     try:
         response = await fetch_page(http, url, MAX_FILE_BYTES)
@@ -201,6 +220,35 @@ async def _verify_file(
     content = response.content.decode("utf-8", "replace").strip()
     if not hmac.compare_digest(content, challenge.token):
         raise OwnershipError(errors.FILE_MISMATCH.format(url=url), "file_mismatch")
+
+
+async def _verify_meta(
+    challenge: Challenge, http: httpx.AsyncClient, base_url: str | None = None
+) -> None:
+    url = f"{base_url}/" if base_url else f"https://{challenge.domain}/"
+    expected_host = urlsplit(url).hostname
+    try:
+        response = await fetch_page(http, url, MAX_PAGE_BYTES)
+    except httpx.TooManyRedirects as exc:
+        raise OwnershipError(errors.TOO_MANY_REDIRECTS, "too_many_redirects") from exc
+    except httpx.TimeoutException as exc:
+        raise OwnershipError(errors.TIMEOUT, "timeout") from exc
+    except httpx.TransportError as exc:
+        raise OwnershipError(errors.UNREACHABLE, "unreachable") from exc
+
+    final_host = response.request.url.host
+    if final_host != expected_host:
+        # Typically example.com -> www.example.com: the tag proves control of www only.
+        raise OwnershipError(
+            errors.PAGE_REDIRECTED.format(domain=challenge.domain, other=final_host),
+            "page_redirected",
+        )
+    codes = read_page(response.content.decode("utf-8", "replace")).verification_codes
+    if any(hmac.compare_digest(code, challenge.token) for code in codes):
+        return
+    if codes:
+        raise OwnershipError(errors.META_MISMATCH.format(domain=challenge.domain), "meta_mismatch")
+    raise OwnershipError(errors.META_NOT_FOUND.format(domain=challenge.domain), "meta_not_found")
 
 
 async def verify_ownership(
@@ -225,9 +273,40 @@ async def verify_ownership(
 
     if method is Method.DNS:
         await _verify_dns(challenge, lookup)
-    elif http is not None:
-        await _verify_file(challenge, http, base_url)
+        return issue_pass(domain, method, now=now)
+    check = _verify_file if method is Method.FILE else _verify_meta
+    if http is not None:
+        await check(challenge, http, base_url)
     else:
         async with make_client() as client:
-            await _verify_file(challenge, client, base_url)
+            await check(challenge, client, base_url)
     return issue_pass(domain, method, now=now)
+
+
+async def verify_any(
+    domain: str,
+    token: str,
+    *,
+    lookup: TxtLookup = lookup_txt,
+    http: httpx.AsyncClient | None = None,
+    base_url: str | None = None,
+    now: float | None = None,
+) -> OwnershipPass:
+    """Look for the code with every method, easiest first, and accept the first found.
+
+    The owner often forwards the request to their web developer, who picks a method: the
+    owner's page then simply waits, checking again from time to time.
+    """
+    if not check_challenge(domain, token, now=now):
+        raise OwnershipError(errors.INVALID_CHALLENGE, "invalid_challenge")
+    for method in (Method.META, Method.FILE, Method.DNS):
+        try:
+            return await verify_ownership(
+                domain, token, method, lookup=lookup, http=http, base_url=base_url, now=now
+            )
+        except OwnershipError:
+            continue
+    challenge = Challenge(domain=domain, token=token, expires_at=0)
+    raise OwnershipError(
+        errors.PROOF_NOT_FOUND.format(domain=domain, url=challenge.file_url), "proof_not_found"
+    )

@@ -23,6 +23,9 @@ class PageInfo:
     links: list[Link] = field(default_factory=list)
     resources: list[str] = field(default_factory=list)  # script, link, iframe, img sources
     generator: str = ""
+    # Codes of <meta name="vigilo-verification"> tags found in the <head> only: visitors can
+    # add content to the body of some pages (comments, reviews), never to the head.
+    verification_codes: list[str] = field(default_factory=list)
 
 
 class _Reader(HTMLParser):
@@ -31,9 +34,12 @@ class _Reader(HTMLParser):
         self.info = PageInfo()
         self._href: str | None = None
         self._text: list[str] = []
+        self._in_body = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         a = {k.lower(): (v or "") for k, v in attrs}
+        if tag == "body":
+            self._in_body = True
         if tag == "html" and not self.info.lang:
             self.info.lang = a.get("lang", "").lower()
         elif tag == "a":
@@ -45,6 +51,12 @@ class _Reader(HTMLParser):
             self.info.resources.append(a["href"])
         elif tag == "meta" and a.get("name", "").lower() == "generator":
             self.info.generator = self.info.generator or a.get("content", "")
+        elif (
+            tag == "meta"
+            and not self._in_body
+            and a.get("name", "").lower() == "vigilo-verification"
+        ):
+            self.info.verification_codes.append(a.get("content", "").strip())
 
     def handle_data(self, data: str) -> None:
         if self._href is not None:

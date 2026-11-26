@@ -153,32 +153,149 @@ export const de: Messages = {
     preparing: "Wird vorbereitet…",
     failed: "Bei uns ist etwas schiefgelaufen. Bitte versuchen Sie es gleich noch einmal.",
     steps: {
-      choose: "Bestätigungscode veröffentlichen",
-      verify: "Code prüfen",
-      verified: "Domain bestätigt",
+      publish: "Verifizierungscode veröffentlichen",
+      check: "Vigilo prüft den Code",
+      verified: "Domain verifiziert",
     },
     stepDone: "erledigt",
-    methods: { dns: "DNS-Eintrag", file: "Datei auf der Website" },
-    methodHints: {
-      dns: "Wenn Sie die DNS-Zone Ihrer Domain bearbeiten können, beim Registrar oder Hoster.",
-      file: "Wenn Sie Dateien auf Ihre Website hochladen können, per FTP oder im Hosting-Panel.",
+    who: {
+      question: "Wer kümmert sich um die Technik Ihrer Website?",
+      someone: "Jemand anderes: eine Webagentur, ein Entwickler, ein Bekannter",
+      someoneHint: "Vigilo schreibt die Nachricht für Sie. Sie leiten sie nur weiter.",
+      me: "Ich mache das selbst",
+      meHint: "Drei Wege, den Code zu veröffentlichen, mit Schritt-für-Schritt-Anleitungen.",
     },
+    delegate: {
+      intro:
+        "Senden Sie diese Nachricht an die Person, die Ihre Website betreut. Sie erklärt genau, was zu tun ist, in etwa 2 Minuten. Sie müssen sie nicht verstehen.",
+      email: "Per E-Mail senden",
+      whatsapp: "Per WhatsApp senden",
+      copy: "Nachricht kopieren",
+      subject: (domain: string) => `Bitte ${domain} für einen Vigilo-Sicherheitsscan verifizieren`,
+      message: (p) =>
+        `Hallo,\n\nich möchte einen Vigilo-Sicherheitsscan von ${p.domain} durchführen. Um zu beweisen, dass die Website uns gehört, könntest du EINE dieser drei Sachen erledigen? Das dauert etwa 2 Minuten.\n\n1. HTML-Tag: Füge diese Zeile im Abschnitt <head> der Startseite ein und veröffentliche:\n${p.tag}\n\n2. Oder eine Datei: Lege eine Datei namens ${p.fileName} an, die nur diesen Code enthält:\n${p.code}\nund lege sie in den Hauptordner der Website, sodass sie unter ${p.fileUrl} erreichbar ist.\n\n3. Oder ein DNS-Eintrag: Füge einen TXT-Eintrag namens ${p.dnsName} mit diesem Wert hinzu:\n${p.dnsValue}\n\nDer Code gilt bis ${p.until}. Vigilo prüft selbstständig: sonst ist nichts zu tun.\n\nDanke!`,
+    },
+    methodsTitle: "Wählen Sie einen Weg, den Code zu veröffentlichen",
+    methods: { meta: "HTML-Tag", file: "Datei auf der Website", dns: "DNS-Eintrag" },
+    methodHints: {
+      meta: "Am einfachsten: eine Zeile in den Einstellungen Ihrer Website.",
+      file: "Wenn Sie Dateien auf Ihre Website hochladen können.",
+      dns: "Wenn Sie Ihren Domainnamen verwalten.",
+    },
+    metaInstructions:
+      "Fügen Sie diese Zeile im Abschnitt <head> Ihrer Startseite ein, dann speichern und veröffentlichen:",
+    metaLabel: "Tag",
+    fileInstructions:
+      "Laden Sie diese Datei herunter und legen Sie sie in den Hauptordner Ihrer Website, den mit der Startseite. Sie muss dann unter dieser Adresse erreichbar sein:",
+    download: (name: string) => `${name} herunterladen`,
+    fileAddress: "Adresse",
     dnsInstructions: "Fügen Sie diesen Eintrag zur DNS-Zone Ihrer Domain hinzu:",
     dnsDelay: "Ein neuer Eintrag kann bis zu einer Stunde brauchen, bis er sichtbar ist.",
     recordType: "Typ",
     recordName: "Name",
     recordValue: "Wert",
-    fileInstructions: "Legen Sie unter dieser Adresse eine Textdatei an, die nur den Code enthält:",
-    fileAddress: "Adresse",
-    fileContent: "Inhalt",
+    guidesTitle: "Schritt-für-Schritt-Anleitungen",
+    guidesFor: "Wo liegt Ihre Website?",
+    guidesNote: "Menüs ändern sich ab und zu: Wenn eine Bezeichnung anders ist, nehmen Sie die ähnlichste.",
+    guides: {
+      meta: [
+        {
+          name: "WordPress",
+          steps: [
+            "Öffnen Sie im WordPress-Dashboard Plugins > Neues Plugin hinzufügen und suchen Sie „WPCode“. Installieren und aktivieren Sie es (kostenlos).",
+            "Öffnen Sie Code Snippets > Header & Footer.",
+            "Fügen Sie den Tag im Feld Header ein und klicken Sie auf Save Changes.",
+            "Wenn Ihre Website ein Cache-Plugin nutzt, leeren Sie den Cache.",
+          ],
+        },
+        {
+          name: "Joomla, Drupal, PrestaShop oder eigene Website",
+          steps: [
+            "Öffnen Sie das Template (Theme) der Startseite in Ihrer Verwaltung oder Ihrem Code-Editor.",
+            "Suchen Sie die Zeile </head> und fügen Sie den Tag direkt davor ein.",
+            "Speichern und veröffentlichen Sie, dann leeren Sie den Cache, falls vorhanden.",
+          ],
+        },
+      ],
+      file: [
+        {
+          name: "Hosting-Verwaltung (cPanel, hPanel, Plesk)",
+          steps: [
+            "Laden Sie die Datei mit der Schaltfläche oben herunter.",
+            "Melden Sie sich in Ihrer Hosting-Verwaltung an und öffnen Sie den Dateimanager.",
+            "Öffnen Sie den Hauptordner der Website: meist public_html, www, htdocs oder httpdocs (der Ordner mit index.php oder index.html).",
+            "Laden Sie die Datei dort hoch, ohne sie umzubenennen.",
+            "Öffnen Sie die oben angezeigte Adresse: Sie sollten den Code sehen.",
+          ],
+        },
+        {
+          name: "FTP (FileZilla)",
+          steps: [
+            "Laden Sie die Datei mit der Schaltfläche oben herunter.",
+            "Verbinden Sie sich mit Ihren FTP-Zugangsdaten mit der Website.",
+            "Öffnen Sie auf der Serverseite den Ordner mit der Startseite (public_html, www oder htdocs).",
+            "Ziehen Sie die Datei hinein und öffnen Sie zur Kontrolle die oben angezeigte Adresse.",
+          ],
+        },
+      ],
+      dns: [
+        {
+          name: "Cloudflare",
+          steps: [
+            "Melden Sie sich bei dash.cloudflare.com an und wählen Sie Ihre Domain.",
+            "Öffnen Sie DNS > Records und klicken Sie auf Add record.",
+            "Type: TXT. Name: _vigilo. Content: der oben angezeigte Wert. Klicken Sie auf Save.",
+          ],
+        },
+        {
+          name: "OVHcloud",
+          steps: [
+            "Öffnen Sie im OVHcloud Kundencenter Web Cloud > Domainnamen und wählen Sie Ihre Domain.",
+            "Öffnen Sie den Tab DNS-Zone und klicken Sie auf Eintrag hinzufügen.",
+            "Wählen Sie TXT, geben Sie _vigilo als Subdomain und den oben angezeigten Wert ein und bestätigen Sie.",
+          ],
+        },
+        {
+          name: "GoDaddy",
+          steps: [
+            "Öffnen Sie Meine Produkte, suchen Sie Ihre Domain und klicken Sie auf DNS.",
+            "Klicken Sie auf Neuen Eintrag hinzufügen und wählen Sie TXT.",
+            "Name: _vigilo. Wert: der oben angezeigte Wert. Klicken Sie auf Speichern.",
+          ],
+        },
+        {
+          name: "IONOS",
+          steps: [
+            "Öffnen Sie Domains & SSL, wählen Sie Ihre Domain und öffnen Sie DNS.",
+            "Klicken Sie auf Eintrag hinzufügen und wählen Sie TXT.",
+            "Hostname: _vigilo. Wert: der oben angezeigte Wert. Klicken Sie auf Speichern.",
+          ],
+        },
+        {
+          name: "Anderer Anbieter",
+          steps: [
+            "Melden Sie sich dort an, wo Sie Ihren Domainnamen gekauft haben, und suchen Sie „DNS-Zone“, „DNS-Einträge“ oder „DNS verwalten“.",
+            "Fügen Sie einen Eintrag vom Typ TXT hinzu.",
+            "Name (oder Host): _vigilo. Manche Anbieter verlangen stattdessen den oben angezeigten vollständigen Namen. Wert: der oben angezeigte Wert.",
+            "Speichern Sie. Der Eintrag kann bis zu einer Stunde brauchen, bis er sichtbar ist.",
+          ],
+        },
+      ],
+    },
     expires: (time: string) => `Dieser Code gilt bis ${time}.`,
+    waiting:
+      "Warten auf den Code. Vigilo prüft alle 30 Sekunden selbstständig. Sie können die Seite verlassen und später wiederkommen: Dieser Browser merkt sich den Code, bis er verifiziert ist.",
+    lastChecked: (time: string) => `Letzte Prüfung um ${time}: noch nicht veröffentlicht.`,
+    paused: "Die automatischen Prüfungen sind pausiert. Klicken Sie auf „Jetzt prüfen“, sobald der Code veröffentlicht ist.",
     verify: "Jetzt prüfen",
     verifying: "Wird geprüft…",
     newCode: "Neuen Code anfordern",
-    verified: (domain: string) => `${domain} ist bestätigt`,
+    verified: (domain: string) => `${domain} ist verifiziert`,
     validUntil: (time: string) => `Der Nachweis gilt bis ${time}.`,
     keepProof:
-      "Lassen Sie den Eintrag oder die Datei bestehen: Vor jeder aktiven Prüfung wird er erneut kontrolliert. Entfernen Sie ihn, um Ihre Erlaubnis zu widerrufen.",
+      "Lassen Sie den Tag, die Datei oder den Eintrag bestehen: Er wird vor jedem aktiven Scan erneut geprüft. Entfernen Sie ihn, um Ihre Erlaubnis zu widerrufen.",
+    hosted: (platform: string) =>
+      `Ihre Website läuft auf ${platform}. ${platform} kümmert sich um die Sicherheit der eigenen Server und erlaubt niemandem, sie zu scannen. Der aktive Scan ist daher nicht möglich. Der Sicherheitscheck oben bleibt gültig.`,
     conditionsTitle: "Bevor Sie beginnen",
     conditions: [
       "Etwa 10 Minuten lang sendet Vigilo mit Nuclei und OWASP ZAP Testanfragen an diese Website.",

@@ -22,7 +22,18 @@ test("from the check-up to a verified active scan and back", async ({ page }) =>
 
   // Proof of ownership.
   await page.getByRole("button", { name: a.start }).click();
-  await expect(page.getByText("_vigilo.shop.example")).toBeVisible();
+  await page.getByRole("radio", { name: new RegExp(a.who.someone) }).check();
+  await expect(page.getByRole("link", { name: a.delegate.email })).toBeVisible();
+  await page.getByRole("radio", { name: new RegExp(a.who.me) }).check();
+  await expect(page.getByText('<meta name="vigilo-verification" content="abc.1800000000.def">')).toBeVisible();
+  const proof = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+  expect(proof.violations.map((v) => v.id)).toEqual([]);
+  if (process.env.E2E_SCREENSHOTS) {
+    await page.getByText(a.guidesTitle, { exact: true }).click();
+    await page.locator("section").filter({ hasText: a.title }).screenshot({
+      path: `test-results/proof-${test.info().project.name}.png`,
+    });
+  }
   await page.getByRole("button", { name: a.verify }).click();
   await expect(page.getByRole("heading", { name: a.verified("shop.example") })).toBeVisible();
 

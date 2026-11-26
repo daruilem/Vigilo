@@ -29,6 +29,8 @@ export interface Finding {
   note: string | null;
   fixes: Partial<Record<Platform, Fix>>;
   follow_up: string | null;
+  /** Machine-readable details, e.g. {platform, hosted} on cms.detected. */
+  evidence?: Record<string, unknown>;
 }
 
 export interface ScanReport {
@@ -57,15 +59,16 @@ export interface ScanFailure {
   message: string;
 }
 
-export type ProofMethod = "dns" | "file";
+export type ProofMethod = "meta" | "file" | "dns";
 
 /** Mirrors api.ChallengeResponse: what to publish to prove control of a domain. */
 export interface OwnershipChallenge {
   domain: string;
   token: string;
   expires_at: number; // Unix time, seconds
+  meta: { tag: string };
+  file: { name: string; url: string; content: string };
   dns: { name: string; type: "TXT"; value: string };
-  file: { url: string; content: string };
 }
 
 /** Mirrors api.VerifyResponse. */

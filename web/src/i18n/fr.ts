@@ -153,32 +153,149 @@ export const fr: Messages = {
     preparing: "Préparation…",
     failed: "Un problème est survenu de notre côté. Réessayez dans un instant.",
     steps: {
-      choose: "Publier le code de vérification",
-      verify: "Vérifier le code",
+      publish: "Publier le code de vérification",
+      check: "Vigilo vérifie le code",
       verified: "Domaine vérifié",
     },
     stepDone: "fait",
-    methods: { dns: "Enregistrement DNS", file: "Fichier sur le site" },
-    methodHints: {
-      dns: "Si vous pouvez modifier la zone DNS de votre domaine, chez votre registraire ou votre hébergeur.",
-      file: "Si vous pouvez déposer des fichiers sur votre site, par FTP ou dans le panneau de votre hébergeur.",
+    who: {
+      question: "Qui s'occupe de la partie technique de votre site ?",
+      someone: "Quelqu'un d'autre : une agence web, un développeur, un proche",
+      someoneHint: "Vigilo rédige le message pour vous. Vous n'avez qu'à le transmettre.",
+      me: "Je m'en occupe moi-même",
+      meHint: "Trois façons de publier le code, avec des guides pas à pas.",
     },
+    delegate: {
+      intro:
+        "Envoyez ce message à la personne qui s'occupe de votre site. Il lui explique exactement quoi faire, en 2 minutes environ. Vous n'avez pas besoin de le comprendre.",
+      email: "Envoyer par e-mail",
+      whatsapp: "Envoyer sur WhatsApp",
+      copy: "Copier le message",
+      subject: (domain: string) => `Merci de vérifier ${domain} pour une analyse de sécurité Vigilo`,
+      message: (p) =>
+        `Bonjour,\n\nJe voudrais lancer une analyse de sécurité Vigilo de ${p.domain}. Pour prouver que le site est bien à nous, pourrais-tu faire UNE de ces trois choses ? Cela prend environ 2 minutes.\n\n1. Balise HTML : colle cette ligne dans la section <head> de la page d'accueil, puis publie :\n${p.tag}\n\n2. Ou un fichier : crée un fichier nommé ${p.fileName} qui contient uniquement ce code :\n${p.code}\net place-le dans le dossier principal du site, pour qu'il s'ouvre à l'adresse ${p.fileUrl}\n\n3. Ou un enregistrement DNS : ajoute un enregistrement TXT nommé ${p.dnsName} avec cette valeur :\n${p.dnsValue}\n\nLe code est valable jusqu'au ${p.until}. Vigilo vérifie tout seul : rien d'autre à faire.\n\nMerci !`,
+    },
+    methodsTitle: "Choisissez une façon de publier le code",
+    methods: { meta: "Balise HTML", file: "Fichier sur le site", dns: "Enregistrement DNS" },
+    methodHints: {
+      meta: "La plus simple : une ligne dans les réglages de votre site.",
+      file: "Si vous pouvez déposer des fichiers sur votre site.",
+      dns: "Si vous gérez votre nom de domaine.",
+    },
+    metaInstructions:
+      "Collez cette ligne dans la section <head> de votre page d'accueil, puis enregistrez et publiez :",
+    metaLabel: "Balise",
+    fileInstructions:
+      "Téléchargez ce fichier et placez-le dans le dossier principal de votre site, celui qui contient la page d'accueil. Il doit ensuite s'ouvrir à cette adresse :",
+    download: (name: string) => `Télécharger ${name}`,
+    fileAddress: "Adresse",
     dnsInstructions: "Ajoutez cet enregistrement à la zone DNS de votre domaine :",
     dnsDelay: "Un nouvel enregistrement peut mettre jusqu'à une heure à apparaître.",
     recordType: "Type",
     recordName: "Nom",
     recordValue: "Valeur",
-    fileInstructions: "Créez un fichier texte à cette adresse, contenant uniquement le code :",
-    fileAddress: "Adresse",
-    fileContent: "Contenu",
+    guidesTitle: "Guides pas à pas",
+    guidesFor: "Où se trouve votre site ?",
+    guidesNote: "Les menus changent de temps en temps : si un libellé est différent, cherchez le plus proche.",
+    guides: {
+      meta: [
+        {
+          name: "WordPress",
+          steps: [
+            "Dans votre tableau de bord WordPress, ouvrez Extensions > Ajouter une extension et cherchez « WPCode ». Installez-la et activez-la (elle est gratuite).",
+            "Ouvrez Code Snippets > Header & Footer.",
+            "Collez la balise dans la zone Header, puis cliquez sur Save Changes.",
+            "Si votre site utilise une extension de cache, videz son cache.",
+          ],
+        },
+        {
+          name: "Joomla, Drupal, PrestaShop ou site sur mesure",
+          steps: [
+            "Ouvrez le modèle (thème) de la page d'accueil dans votre administration ou votre éditeur de code.",
+            "Trouvez la ligne </head> et collez la balise juste avant.",
+            "Enregistrez et publiez, puis videz le cache s'il y en a un.",
+          ],
+        },
+      ],
+      file: [
+        {
+          name: "Panneau d'hébergement (cPanel, hPanel, Plesk)",
+          steps: [
+            "Téléchargez le fichier avec le bouton ci-dessus.",
+            "Connectez-vous à votre panneau d'hébergement et ouvrez le Gestionnaire de fichiers.",
+            "Ouvrez le dossier principal du site : en général public_html, www, htdocs ou httpdocs (celui qui contient index.php ou index.html).",
+            "Déposez-y le fichier, sans le renommer.",
+            "Ouvrez l'adresse indiquée ci-dessus : vous devez voir le code.",
+          ],
+        },
+        {
+          name: "FTP (FileZilla)",
+          steps: [
+            "Téléchargez le fichier avec le bouton ci-dessus.",
+            "Connectez-vous à votre site avec vos identifiants FTP.",
+            "Côté serveur, ouvrez le dossier qui contient la page d'accueil (public_html, www ou htdocs).",
+            "Glissez-y le fichier, puis ouvrez l'adresse indiquée ci-dessus pour vérifier.",
+          ],
+        },
+      ],
+      dns: [
+        {
+          name: "Cloudflare",
+          steps: [
+            "Connectez-vous à dash.cloudflare.com et choisissez votre domaine.",
+            "Ouvrez DNS > Records et cliquez sur Add record.",
+            "Type : TXT. Name : _vigilo. Content : la valeur indiquée ci-dessus. Cliquez sur Save.",
+          ],
+        },
+        {
+          name: "OVHcloud",
+          steps: [
+            "Dans l'espace client OVHcloud, ouvrez Web Cloud > Noms de domaine et choisissez votre domaine.",
+            "Ouvrez l'onglet Zone DNS et cliquez sur Ajouter une entrée.",
+            "Choisissez TXT, indiquez _vigilo comme sous-domaine et la valeur indiquée ci-dessus, puis validez.",
+          ],
+        },
+        {
+          name: "GoDaddy",
+          steps: [
+            "Ouvrez Mes produits, trouvez votre domaine et cliquez sur DNS.",
+            "Cliquez sur Ajouter un nouvel enregistrement et choisissez TXT.",
+            "Nom : _vigilo. Valeur : la valeur indiquée ci-dessus. Cliquez sur Enregistrer.",
+          ],
+        },
+        {
+          name: "IONOS",
+          steps: [
+            "Ouvrez Domaines & SSL, choisissez votre domaine, puis ouvrez DNS.",
+            "Cliquez sur Ajouter un enregistrement et choisissez TXT.",
+            "Nom d'hôte : _vigilo. Valeur : la valeur indiquée ci-dessus. Cliquez sur Enregistrer.",
+          ],
+        },
+        {
+          name: "Autre fournisseur",
+          steps: [
+            "Connectez-vous là où vous avez acheté votre nom de domaine et cherchez « Zone DNS », « Enregistrements DNS » ou « Gérer le DNS ».",
+            "Ajoutez un enregistrement de type TXT.",
+            "Nom (ou Hôte) : _vigilo. Certains fournisseurs demandent plutôt le nom complet indiqué ci-dessus. Valeur : la valeur indiquée ci-dessus.",
+            "Enregistrez. L'enregistrement peut mettre jusqu'à une heure à apparaître.",
+          ],
+        },
+      ],
+    },
     expires: (time: string) => `Ce code est valable jusqu'au ${time}.`,
+    waiting:
+      "En attente du code. Vigilo vérifie tout seul toutes les 30 secondes. Vous pouvez partir et revenir plus tard : ce navigateur garde le code jusqu'à sa vérification.",
+    lastChecked: (time: string) => `Dernière vérification à ${time} : pas encore publié.`,
+    paused: "Les vérifications automatiques sont en pause. Cliquez sur « Vérifier maintenant » une fois le code publié.",
     verify: "Vérifier maintenant",
     verifying: "Vérification…",
     newCode: "Obtenir un nouveau code",
     verified: (domain: string) => `${domain} est vérifié`,
     validUntil: (time: string) => `La preuve est valable jusqu'au ${time}.`,
     keepProof:
-      "Laissez l'enregistrement ou le fichier en place : il est vérifié à nouveau avant chaque analyse active. Retirez-le pour retirer votre autorisation.",
+      "Laissez la balise, le fichier ou l'enregistrement en place : il est vérifié à nouveau avant chaque analyse active. Retirez-le pour retirer votre autorisation.",
+    hosted: (platform: string) =>
+      `Votre site fonctionne sur ${platform}. ${platform} s'occupe de la sécurité de ses propres serveurs et ne permet à personne de les analyser : l'analyse active ne s'applique donc pas. Le bilan ci-dessus reste valable.`,
     conditionsTitle: "Avant de commencer",
     conditions: [
       "Pendant environ 10 minutes, Vigilo envoie des requêtes de test à ce site avec Nuclei et OWASP ZAP.",

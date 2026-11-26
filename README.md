@@ -157,7 +157,7 @@ escaped before they enter the Markdown summary.
 | `GET /api/v1/scans/stream?target=…&authorized=true&lang=en` | Server-Sent Events: `progress`, then `report` or `failure`. |
 | `POST /api/v1/reports/pdf` | Body `{"report": <signed report>, "lang": "en", "platform": "nginx"}`. Returns the PDF. |
 | `POST /api/v1/ownership/challenge` | Body `{"target": "example.com"}`. A code to publish in DNS or in a file. |
-| `POST /api/v1/ownership/verify` | Body `{"target", "token", "method": "dns" \| "file"}`. Returns a signed ownership pass. |
+| `POST /api/v1/ownership/verify` | Body `{"target", "token", "method": "auto" \| "meta" \| "file" \| "dns"}`. Returns a signed ownership pass. |
 | `POST /api/v1/active-scans` | Body `{"target", "token", "ownership_pass", "accept_terms": true}`. Starts an active scan, returns `{"job_id"}`. |
 | `GET /api/v1/active-scans/{job_id}/stream` | Server-Sent Events of the active scan, from its start. |
 | `GET /health` | Liveness check. |
@@ -181,7 +181,7 @@ what to do.
 | `VIGILO_DOCS` | `0` | Set to `1` to serve the interactive API docs at `/docs` |
 | `VIGILO_SIGNING_KEY` | random at start-up | Secret used to sign reports. Set it when running several API processes. |
 | `VIGILO_PDFS_PER_WINDOW` | `30` | PDF downloads per client IP per window |
-| `VIGILO_VERIFICATIONS_PER_WINDOW` | `20` | Domain ownership requests per client IP per window |
+| `VIGILO_VERIFICATIONS_PER_WINDOW` | `60` | Domain ownership requests per client IP per window |
 | `VIGILO_ACTIVE_SCAN` | `0` | Set to `1` to accept active scans (needs Docker, see [Active scan](#active-scan-verified-owners-only)) |
 | `VIGILO_ACTIVE_SCANS_PER_DAY` | `3` | Active scans per client IP per day |
 | `VIGILO_ACTIVE_SCANS_PER_TARGET` | `2` | Active scans of the same website per day |
@@ -292,10 +292,17 @@ passive grade stays comparable between sites.
 Sending test requests to someone else's site is an offence (section 202c StGB and its
 equivalents), so a checkbox is not enough here:
 
-1. **Proof of ownership.** The owner publishes a code as a DNS TXT record
-   (`_vigilo.<domain>`) or as a file (`/.well-known/vigilo-verification.txt`). Codes and
-   passes are HMAC-signed, bound to the exact host name and valid 24 hours; nothing is
-   stored. `example.com` does not cover `shop.example.com`.
+1. **Proof of ownership**, the way Google Search Console does it. The owner publishes a
+   code in one of three ways: an HTML tag in the `<head>` of the home page (tags in the
+   body do not count: visitors can sometimes add content there), a file at the root of
+   the site (`/vigilo-<id>.txt`), or a DNS TXT record (`_vigilo.<domain>`). Most owners do
+   not touch the technical side themselves, so Vigilo writes a ready-made message for
+   whoever runs their site (email, WhatsApp or copy) and checks every method by itself
+   every 30 seconds; step-by-step guides cover WordPress, hosting panels, FTP and the
+   main DNS providers. Codes and passes are HMAC-signed, bound to the exact host name and
+   valid 24 hours; nothing is stored on the server. `example.com` does not cover
+   `shop.example.com`. Sites on hosted platforms (Shopify, Wix, Squarespace, Webflow) are
+   refused: an active scan would test the platform's servers, which their terms forbid.
 2. **Checked again at launch.** Right before the tools start, the proof must still be
    online. Removing it withdraws the permission, and a copied pass is useless alone.
 3. **Explicit consent** to the conditions, then a **consent log** entry: time, domain,
@@ -351,8 +358,8 @@ VIGILO_ACTIVE_SCAN=1 VIGILO_LAB_TARGETS="juice.lab=http://127.0.0.1:8080" \
   uvicorn vigilo.api:app --no-server-header --no-proxy-headers
 ```
 
-Then ask for a code for `juice.lab` (`POST /api/v1/ownership/challenge`), write it to
-`lab/www/.well-known/vigilo-verification.txt`, verify it with the `file` method, and start
+Then ask for a code for `juice.lab` (`POST /api/v1/ownership/challenge`), save it in
+`lab/www/` under the file name it gives (`vigilo-<id>.txt`), verify it, and start
 the scan. On Juice Shop a full scan takes about 9 minutes. Stop the lab with
 `docker compose -f docker-compose.lab.yml down`.
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useI18n } from "@/i18n/client";
 
-export function CopyButton({ text }: { text: string }) {
+export function CopyButton({ text, label }: { text: string; label?: string }) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
 
@@ -30,7 +30,7 @@ export function CopyButton({ text }: { text: string }) {
         onClick={copy}
         className="h-11 min-w-[76px] shrink-0 cursor-pointer border-t border-rule px-3.5 text-sm font-semibold md:border-t-0 md:border-s print:hidden"
       >
-        {copied ? t.report.copied : t.report.copy}
+        {copied ? t.report.copied : (label ?? t.report.copy)}
       </button>
       <span role="status" className="sr-only">
         {copied ? t.report.copiedAnnouncement : ""}

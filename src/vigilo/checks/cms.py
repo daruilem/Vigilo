@@ -210,6 +210,8 @@ def evaluate(
             headline=f"Built with {cms.name}",
             description=description,
             observed=[Observation(label="Detected from", value=detection.source)],
+            # Read by the interface: the active scan does not apply to hosted platforms.
+            evidence={"platform": cms.name, "hosted": cms.hosted},
         )
     ]
 

@@ -15,6 +15,7 @@ from vigilo.ownership import (
     check_pass,
     create_challenge,
     issue_pass,
+    verify_any,
     verify_ownership,
 )
 
@@ -61,7 +62,10 @@ def test_challenge_is_short_enough_for_a_txt_record():
     challenge = create_challenge(DOMAIN)
     assert len(challenge.dns_value) < 255  # one TXT character-string
     assert challenge.dns_name == "_vigilo.shop.example"
-    assert challenge.file_url == "https://shop.example/.well-known/vigilo-verification.txt"
+    nonce = challenge.token.split(".")[0]
+    assert challenge.file_name == f"vigilo-{nonce}.txt"
+    assert challenge.file_url == f"https://shop.example/vigilo-{nonce}.txt"
+    assert challenge.meta_tag == f'<meta name="vigilo-verification" content="{challenge.token}">'
 
 
 def test_pass_is_valid_for_its_domain_until_it_expires():
@@ -130,14 +134,117 @@ def test_record_on_the_bare_domain_does_not_count():
         run(verify_ownership(DOMAIN, challenge.token, Method.DNS, lookup=lookup, now=NOW))
 
 
-def file_check(handler, token, domain=DOMAIN):
+def file_check(handler, token, domain=DOMAIN, method=Method.FILE):
     async def go():
         async with httpx.AsyncClient(
             transport=httpx.MockTransport(handler), follow_redirects=True
         ) as http:
-            return await verify_ownership(domain, token, Method.FILE, http=http, now=NOW)
+            return await verify_ownership(domain, token, method, http=http, now=NOW)
 
     return run(go())
+
+
+def page(head="", body=""):
+    return f"<html><head><title>Shop</title>{head}</head><body>{body}</body></html>"
+
+
+# --- HTML tag ---------------------------------------------------------------------------
+
+
+def test_meta_tag_proof():
+    challenge = create_challenge(DOMAIN, now=NOW)
+    seen = []
+
+    def handler(request):
+        seen.append(str(request.url))
+        return httpx.Response(200, text=page(head=challenge.meta_tag))
+
+    proof = file_check(handler, challenge.token, method=Method.META)
+    assert seen == ["https://shop.example/"]
+    assert check_pass(DOMAIN, proof.token, now=NOW) is Method.META
+
+
+def test_meta_tag_in_the_body_does_not_count():
+    # Visitors can sometimes add content to a page (comments, reviews), never to its head.
+    challenge = create_challenge(DOMAIN, now=NOW)
+    html = page(body=f"<p>Nice shop!</p>{challenge.meta_tag}")
+    with pytest.raises(OwnershipError) as error:
+        file_check(lambda r: httpx.Response(200, text=html), challenge.token, method=Method.META)
+    assert error.value.code == "meta_not_found"
+
+
+def test_meta_tag_with_another_code():
+    challenge = create_challenge(DOMAIN, now=NOW)
+    old = create_challenge(DOMAIN, now=NOW).meta_tag
+    with pytest.raises(OwnershipError) as error:
+        file_check(
+            lambda r: httpx.Response(200, text=page(head=old)), challenge.token, method=Method.META
+        )
+    assert error.value.code == "meta_mismatch"
+
+
+def test_meta_tag_on_a_page_that_redirects_to_www_proves_nothing():
+    challenge = create_challenge(DOMAIN, now=NOW)
+
+    def handler(request):
+        if request.url.host == DOMAIN:
+            return httpx.Response(301, headers={"Location": "https://www.shop.example/"})
+        return httpx.Response(200, text=page(head=challenge.meta_tag))
+
+    with pytest.raises(OwnershipError) as error:
+        file_check(handler, challenge.token, method=Method.META)
+    assert error.value.code == "page_redirected"
+    assert "www.shop.example" in error.value.message
+
+
+# --- Automatic: every method ------------------------------------------------------------
+
+
+def auto_check(handler, token, records=None):
+    async def go():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(handler), follow_redirects=True
+        ) as http:
+            return await verify_any(
+                DOMAIN, token, http=http, lookup=fake_dns(records or {}), now=NOW
+            )
+
+    return run(go())
+
+
+def test_auto_accepts_whichever_method_was_used():
+    challenge = create_challenge(DOMAIN, now=NOW)
+
+    def only_the_file(request):
+        if request.url.path == f"/{challenge.file_name}":
+            return httpx.Response(200, text=challenge.token)
+        return httpx.Response(200, text=page())
+
+    assert auto_check(only_the_file, challenge.token).method is Method.FILE
+
+    nothing_on_the_site = lambda request: httpx.Response(404)  # noqa: E731
+    by_dns = auto_check(
+        nothing_on_the_site, challenge.token, {challenge.dns_name: [challenge.dns_value]}
+    )
+    assert by_dns.method is Method.DNS
+
+
+def test_auto_says_when_the_code_is_not_published_yet():
+    challenge = create_challenge(DOMAIN, now=NOW)
+    with pytest.raises(OwnershipError) as error:
+        auto_check(lambda request: httpx.Response(200, text=page()), challenge.token)
+    assert error.value.code == "proof_not_found"
+    assert challenge.file_url in error.value.message
+
+
+def test_auto_refuses_a_forged_code_without_any_network_activity():
+    def handler(request):
+        raise AssertionError("the site must not be contacted")
+
+    forged = create_challenge("other.example", now=NOW).token
+    with pytest.raises(OwnershipError) as error:
+        auto_check(handler, forged)
+    assert error.value.code == "invalid_challenge"
 
 
 def test_file_proof():
@@ -149,7 +256,7 @@ def test_file_proof():
         return httpx.Response(200, text=challenge.token + "\n")
 
     proof = file_check(handler, challenge.token)
-    assert seen == ["https://shop.example/.well-known/vigilo-verification.txt"]
+    assert seen == [challenge.file_url]
     assert check_pass(DOMAIN, proof.token, now=NOW) is Method.FILE
 
 
@@ -185,8 +292,8 @@ def test_redirect_on_the_same_host_is_followed():
     challenge = create_challenge(DOMAIN, now=NOW)
 
     def handler(request):
-        if request.url.path == "/.well-known/vigilo-verification.txt":
-            return httpx.Response(301, headers={"Location": "/.well-known/vigilo.txt"})
+        if request.url.path == f"/{challenge.file_name}":
+            return httpx.Response(301, headers={"Location": "/files/code.txt"})
         return httpx.Response(200, text=challenge.token)
 
     assert file_check(handler, challenge.token).domain == DOMAIN
@@ -232,8 +339,13 @@ def test_no_network_activity_without_a_valid_code():
 
 @pytest.mark.parametrize("language", sorted(CATALOGS))
 def test_ownership_messages_are_translated(language):
-    url = "https://shop.example/.well-known/vigilo-verification.txt"
+    url = "https://shop.example/vigilo-abc.txt"
     messages = [
+        errors.META_NOT_FOUND.format(domain=DOMAIN),
+        errors.META_MISMATCH.format(domain=DOMAIN),
+        errors.PAGE_REDIRECTED.format(domain=DOMAIN, other="www.shop.example"),
+        errors.PROOF_NOT_FOUND.format(domain=DOMAIN, url=url),
+        errors.HOSTED_PLATFORM.format(platform="Shopify"),
         errors.INVALID_CHALLENGE,
         errors.OWNERSHIP_EXPIRED,
         errors.VERIFICATIONS_LIMITED,
@@ -256,7 +368,11 @@ client = TestClient(api.app)
 
 
 @pytest.fixture(autouse=True)
-def reset_limits():
+def reset_limits(monkeypatch):
+    async def not_hosted(domain):
+        return None
+
+    monkeypatch.setattr(api, "_hosted_platform", not_hosted)
     api.ownership_limiter.reset()
     yield
     api.ownership_limiter.reset()
@@ -273,7 +389,48 @@ def test_api_challenge():
         "value": "vigilo-verification=" + body["token"],
     }
     assert body["file"]["content"] == body["token"]
+    assert body["file"]["url"] == f"https://shop.example/{body['file']['name']}"
+    assert body["meta"]["tag"] == f'<meta name="vigilo-verification" content="{body["token"]}">'
     assert check_challenge(DOMAIN, body["token"])
+
+
+@pytest.mark.parametrize(
+    ("html", "refused"),
+    [
+        ('<script src="https://cdn.shopify.com/s/files/theme.js"></script>', True),
+        ('<link href="/wp-content/themes/shop/style.css">', False),
+    ],
+)
+def test_api_challenge_refuses_sites_on_hosted_platforms(monkeypatch, html, refused):
+    monkeypatch.undo()  # use the real platform check
+    api.ownership_limiter.reset()
+
+    async def homepage(http, url, max_bytes=0):
+        return httpx.Response(200, text=html, request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(api, "fetch_page", homepage)
+    response = client.post("/api/v1/ownership/challenge", json={"target": DOMAIN})
+    if refused:
+        assert response.status_code == 422
+        assert response.json()["detail"]["code"] == "hosted_platform"
+        assert "Shopify" in response.json()["detail"]["message"]
+    else:
+        assert response.status_code == 200
+
+
+def test_api_verify_auto(monkeypatch):
+    calls = []
+
+    async def fake_any(domain, token, **kwargs):
+        calls.append(domain)
+        return issue_pass(domain, Method.META)
+
+    monkeypatch.setattr(api, "verify_any", fake_any)
+    token = create_challenge(DOMAIN).token
+    response = client.post("/api/v1/ownership/verify", json={"target": DOMAIN, "token": token})
+    assert response.status_code == 200
+    assert response.json()["method"] == "meta"
+    assert calls == [DOMAIN]
 
 
 def test_api_challenge_rejects_invalid_targets():

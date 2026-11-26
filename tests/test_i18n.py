@@ -261,3 +261,14 @@ def test_code_is_never_translated():
 
 def test_unknown_language_returns_english():
     assert translate("not sent", "xx") == "not sent"
+
+
+def test_no_template_repeats_a_placeholder():
+    # Templates become regular expressions with one named group per placeholder.
+    import re
+    from collections import Counter
+
+    for language, catalog in CATALOGS.items():
+        for key in catalog:
+            repeated = [n for n, c in Counter(re.findall(r"\{(\w+)\}", key)).items() if c > 1]
+            assert not repeated, (language, key)

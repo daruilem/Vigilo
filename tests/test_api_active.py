@@ -32,6 +32,11 @@ def active(monkeypatch, tmp_path):
         return ["2001:db8::1", "203.0.113.7"]
 
     monkeypatch.setattr(api, "verify_ownership", verified)
+
+    async def not_hosted(domain):
+        return None
+
+    monkeypatch.setattr(api, "_hosted_platform", not_hosted)
     monkeypatch.setattr(api, "ensure_public_host", resolved)
     log = tmp_path / "consent.jsonl"
     monkeypatch.setenv("VIGILO_CONSENT_LOG", str(log))

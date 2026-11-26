@@ -1,41 +1,44 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MESSAGES } from "@/i18n";
+import { loadChallenge, saveChallenge } from "@/lib/pendingProof";
 import type { OwnershipChallenge, OwnershipProof } from "@/lib/types";
 
 import { OwnershipVerification } from "./OwnershipVerification";
 
 const a = MESSAGES.en.active;
+const TOKEN = "abc.1800000000.def";
 
 const challenge: OwnershipChallenge = {
   domain: "shop.example",
-  token: "abc.1800000000.def",
+  token: TOKEN,
   expires_at: 1_800_000_000,
-  dns: { name: "_vigilo.shop.example", type: "TXT", value: "vigilo-verification=abc.1800000000.def" },
-  file: { url: "https://shop.example/.well-known/vigilo-verification.txt", content: "abc.1800000000.def" },
+  meta: { tag: `<meta name="vigilo-verification" content="${TOKEN}">` },
+  file: { name: "vigilo-abc.txt", url: "https://shop.example/vigilo-abc.txt", content: TOKEN },
+  dns: { name: "_vigilo.shop.example", type: "TXT", value: `vigilo-verification=${TOKEN}` },
 };
 const proof: OwnershipProof = {
   domain: "shop.example",
-  method: "file",
-  ownership_pass: "file.1800000000.signed",
+  method: "meta",
+  ownership_pass: "meta.1800000000.signed",
   expires_at: 1_800_000_000,
 };
+const notYet = { detail: { code: "proof_not_found", message: "The code is not published on shop.example yet." } };
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
-function setup(...responses: (Response | Error)[]) {
-  const fetchMock = vi.fn(async () => {
-    const next = responses.shift();
-    if (next instanceof Error) throw next;
-    return next ?? json({});
-  });
+function setup(responses: Response[], hostedPlatform: string | null = null, fakeTimers = false) {
+  const fetchMock = vi.fn(async () => responses.shift() ?? json(notYet, 422));
   vi.stubGlobal("fetch", fetchMock);
-  render(<OwnershipVerification target="shop.example" onActiveReport={() => {}} />);
-  return { user: userEvent.setup(), fetchMock };
+  render(
+    <OwnershipVerification target="shop.example" onActiveReport={() => {}} hostedPlatform={hostedPlatform} />,
+  );
+  const user = fakeTimers ? userEvent.setup({ advanceTimers: vi.advanceTimersByTime }) : userEvent.setup();
+  return { user, fetchMock };
 }
 
 function bodyOf(fetchMock: ReturnType<typeof vi.fn>, call: number) {
@@ -43,56 +46,101 @@ function bodyOf(fetchMock: ReturnType<typeof vi.fn>, call: number) {
   return { url, body: JSON.parse(init.body as string) as Record<string, string> };
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  window.localStorage.clear();
+});
 
 describe("OwnershipVerification", () => {
-  it("shows the DNS record to publish, ready to copy", async () => {
-    const { user, fetchMock } = setup(json(challenge));
-    await user.click(screen.getByRole("button", { name: a.start }));
+  it("explains that sites on hosted platforms cannot be scanned", () => {
+    setup([], "Shopify");
+    expect(screen.getByText(a.hosted("Shopify"))).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: a.start })).not.toBeInTheDocument();
+  });
 
+  it("writes the message for whoever runs the website", async () => {
+    const { user, fetchMock } = setup([json(challenge)]);
+    await user.click(screen.getByRole("button", { name: a.start }));
     expect(bodyOf(fetchMock, 0)).toEqual({
       url: "http://localhost:8000/api/v1/ownership/challenge",
       body: { target: "shop.example", lang: "en" },
     });
-    expect(screen.getByRole("heading", { name: a.steps.choose })).toHaveFocus();
-    expect(screen.getByRole("radio", { name: new RegExp(a.methods.dns) })).toBeChecked();
-    expect(screen.getByText("_vigilo.shop.example")).toBeInTheDocument();
-    expect(screen.getByText(challenge.dns.value)).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: MESSAGES.en.report.copy })).toHaveLength(3);
+    expect(screen.getByRole("heading", { name: a.steps.publish })).toHaveFocus();
+    expect(loadChallenge("shop.example", 0)).toEqual(challenge);
+
+    await user.click(screen.getByRole("radio", { name: new RegExp(a.who.someone) }));
+    const message = screen.getByText((text) => text.startsWith("Hello,"));
+    for (const part of [challenge.meta.tag, challenge.file.url, challenge.dns.name, challenge.dns.value]) {
+      expect(message).toHaveTextContent(part);
+    }
+    const email = screen.getByRole("link", { name: a.delegate.email });
+    expect(email.getAttribute("href")).toMatch(/^mailto:\?subject=Please%20verify%20shop\.example/);
+    expect(decodeURIComponent(email.getAttribute("href") ?? "")).toContain(challenge.meta.tag);
+    const whatsapp = screen.getByRole("link", { name: a.delegate.whatsapp });
+    expect(whatsapp.getAttribute("href")).toMatch(/^https:\/\/wa\.me\/\?text=/);
+    expect(screen.getByRole("button", { name: a.delegate.copy })).toBeInTheDocument();
   });
 
-  it("verifies with the file method and shows the result", async () => {
-    const { user, fetchMock } = setup(json(challenge), json(proof));
+  it("shows each method with the values to copy and its guides", async () => {
+    const { user } = setup([json(challenge)]);
     await user.click(screen.getByRole("button", { name: a.start }));
+    await user.click(screen.getByRole("radio", { name: new RegExp(a.who.me) }));
+
+    expect(screen.getByRole("radio", { name: new RegExp(a.methods.meta) })).toBeChecked();
+    expect(screen.getByText(challenge.meta.tag)).toBeInTheDocument();
+    expect(screen.getByText(a.guides.meta[0].steps[0])).toBeInTheDocument();
+
     await user.click(screen.getByRole("radio", { name: new RegExp(a.methods.file) }));
     expect(screen.getByText(challenge.file.url)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: a.download("vigilo-abc.txt") })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: a.verify }));
-    expect(bodyOf(fetchMock, 1).body).toEqual({
-      target: "shop.example",
-      token: challenge.token,
-      method: "file",
-      lang: "en",
-    });
-    const verified = screen.getByRole("heading", { name: a.verified("shop.example") });
-    expect(verified).toHaveFocus();
-    expect(screen.getByText(a.keepProof)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: a.verify })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: new RegExp(a.methods.dns) }));
+    expect(screen.getByText(challenge.dns.value)).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "Cloudflare" }));
+    expect(screen.getByText(a.guides.dns[0].steps[1])).toBeInTheDocument();
   });
 
-  it("shows the server's explanation when the proof is not found, and lets the user retry", async () => {
-    const message = "We did not find the TXT record _vigilo.shop.example.";
-    const { user } = setup(json(challenge), json({ detail: { code: "record_not_found", message } }, 422));
+  it("checks every method at once, says what is missing, then confirms", async () => {
+    const { user, fetchMock } = setup([json(challenge), json(notYet, 422), json(proof)]);
     await user.click(screen.getByRole("button", { name: a.start }));
-    await user.click(screen.getByRole("button", { name: a.verify }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent(message);
-    expect(screen.getByRole("button", { name: a.verify })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: a.verify }));
+    expect(bodyOf(fetchMock, 1).body).toEqual({ target: "shop.example", token: TOKEN, method: "auto", lang: "en" });
+    expect(screen.getByRole("alert")).toHaveTextContent("The code is not published on shop.example yet.");
+
+    await user.click(screen.getByRole("button", { name: a.verify }));
+    expect(screen.getByRole("heading", { name: a.verified("shop.example") })).toHaveFocus();
+    expect(screen.getByText(a.conditionsTitle)).toBeInTheDocument();
+    expect(loadChallenge("shop.example", 0)).toBeNull();
   });
 
-  it("explains when the service cannot be reached", async () => {
-    const { user } = setup(new TypeError("Failed to fetch"));
+  it("checks by itself every 30 seconds", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const { user, fetchMock } = setup([json(challenge), json(notYet, 422), json(proof)], null, true);
     await user.click(screen.getByRole("button", { name: a.start }));
-    expect(screen.getByRole("alert")).toHaveTextContent(MESSAGES.en.errors.network);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => vi.advanceTimersByTime(30_000));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByText(/not published yet/)).toBeInTheDocument();
+
+    await act(async () => vi.advanceTimersByTime(30_000));
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(screen.getByRole("heading", { name: a.verified("shop.example") })).toBeInTheDocument();
+  });
+
+  it("picks up a code requested earlier, for example forwarded yesterday", () => {
+    saveChallenge("shop.example", challenge);
+    setup([]);
+    expect(screen.queryByRole("button", { name: a.start })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: new RegExp(a.who.someone) })).toBeChecked();
+    expect(screen.getByText(a.waiting)).toBeInTheDocument();
+  });
+
+  it("forgets an expired code", () => {
+    saveChallenge("shop.example", { ...challenge, expires_at: 1 });
+    setup([]);
+    expect(screen.getByRole("button", { name: a.start })).toBeInTheDocument();
   });
 });

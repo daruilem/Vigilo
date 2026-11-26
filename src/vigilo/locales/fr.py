@@ -375,4 +375,10 @@ MESSAGES: dict[str, str] = {
     "Known vulnerabilities and exposed files (Nuclei)": "Vulnérabilités connues et fichiers exposés (Nuclei)",
     "Crawl of the site and passive analysis (OWASP ZAP)": "Exploration du site et analyse passive (OWASP ZAP)",
     "Analysis of the results": "Analyse des résultats",
+    # Ownership: HTML tag, automatic check, hosted platforms
+    "We did not find the Vigilo tag in the home page of {domain}. It must be in the <head> section, and the change must be saved and published.": "Nous n'avons pas trouvé la balise Vigilo dans la page d'accueil de {domain}. Elle doit se trouver dans la section <head>, et la modification doit être enregistrée et publiée.",
+    "The home page of {domain} has a Vigilo tag, but with another code. Replace it with the one shown, then try again.": "La page d'accueil de {domain} contient une balise Vigilo, mais avec un autre code. Remplacez-la par celle affichée, puis réessayez.",
+    "The home page of {domain} redirects to {other}. Verify that address instead, or use the file or DNS method.": "La page d'accueil de {domain} redirige vers {other}. Vérifiez plutôt cette adresse, ou utilisez la méthode du fichier ou du DNS.",
+    "The code is not published on {domain} yet: not in the home page, not in the file {url} and not in DNS. Vigilo keeps checking.": "Le code n'est pas encore publié sur {domain} : ni dans la page d'accueil, ni dans le fichier {url}, ni dans le DNS. Vigilo continue de vérifier.",
+    "This website runs on {platform}, which manages its security and does not allow scanning its servers. The active scan does not apply to it.": "Ce site fonctionne sur {platform}, qui gère sa sécurité et n'autorise pas l'analyse de ses serveurs. L'analyse active ne s'applique pas à ce site.",
 }

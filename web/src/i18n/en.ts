@@ -2,6 +2,26 @@
  * Every piece of interface text lives here. To add a language, copy this file,
  * translate the values and keep the same shape (enforced by the `Messages` type).
  */
+import type { ProofMethod } from "@/lib/types";
+
+/** What the message sent to the person who looks after the website contains. */
+export interface ProofMessage {
+  domain: string;
+  tag: string;
+  fileName: string;
+  fileUrl: string;
+  code: string;
+  dnsName: string;
+  dnsValue: string;
+  until: string;
+}
+
+/** Steps to publish the code on one kind of hosting. */
+export interface Guide {
+  name: string;
+  steps: string[];
+}
+
 export const en = {
   meta: {
     title: "Vigilo: free website security check-up",
@@ -155,32 +175,148 @@ export const en = {
     preparing: "Preparing…",
     failed: "Something went wrong on our side. Please try again in a moment.",
     steps: {
-      choose: "Publish the verification code",
-      verify: "Check the code",
+      publish: "Publish the verification code",
+      check: "Vigilo checks the code",
       verified: "Domain verified",
     },
     stepDone: "done",
-    methods: { dns: "DNS record", file: "File on the website" } as Record<"dns" | "file", string>,
+    who: {
+      question: "Who looks after the technical side of your website?",
+      someone: "Someone else: a web agency, a developer, a friend",
+      someoneHint: "Vigilo writes the message for you. You only forward it.",
+      me: "I do it myself",
+      meHint: "Three ways to publish the code, with step-by-step guides.",
+    },
+    delegate: {
+      intro:
+        "Send this message to the person who looks after your website. It tells them exactly what to do, in about 2 minutes. You do not need to understand it.",
+      email: "Send by email",
+      whatsapp: "Send on WhatsApp",
+      copy: "Copy the message",
+      subject: (domain: string) => `Please verify ${domain} for a Vigilo security scan`,
+      message: (p: ProofMessage) =>
+        `Hello,\n\nI would like to run a Vigilo security scan of ${p.domain}. To prove that the website is ours, could you do ONE of these three things? It takes about 2 minutes.\n\n1. HTML tag: paste this line inside the <head> section of the home page, then publish:\n${p.tag}\n\n2. Or a file: create a file named ${p.fileName} that contains only this code:\n${p.code}\nand put it in the main folder of the website, so that it opens at ${p.fileUrl}\n\n3. Or a DNS record: add a TXT record named ${p.dnsName} with this value:\n${p.dnsValue}\n\nThe code is valid until ${p.until}. Vigilo checks by itself: nothing else to do.\n\nThank you!`,
+    },
+    methodsTitle: "Choose one way to publish the code",
+    methods: { meta: "HTML tag", file: "File on the website", dns: "DNS record" } as Record<ProofMethod, string>,
     methodHints: {
-      dns: "If you can edit your domain's DNS zone, at your registrar or host.",
-      file: "If you can upload files to your website, by FTP or in your hosting panel.",
-    } as Record<"dns" | "file", string>,
+      meta: "The easiest: one line in the settings of your site.",
+      file: "If you can upload files to your website.",
+      dns: "If you manage your domain name.",
+    } as Record<ProofMethod, string>,
+    metaInstructions: "Paste this line inside the <head> section of your home page, then save and publish:",
+    metaLabel: "Tag",
+    fileInstructions:
+      "Download this file and put it in the main folder of your website, the one that contains the home page. It must then open at this address:",
+    download: (name: string) => `Download ${name}`,
+    fileAddress: "Address",
     dnsInstructions: "Add this record to your domain's DNS zone:",
     dnsDelay: "A new record can take up to an hour to appear.",
     recordType: "Type",
     recordName: "Name",
     recordValue: "Value",
-    fileInstructions: "Create a text file at this address, containing only the code:",
-    fileAddress: "Address",
-    fileContent: "Content",
+    guidesTitle: "Step-by-step guides",
+    guidesFor: "Where is your website?",
+    guidesNote: "Menus change from time to time: if a label is different, look for the closest one.",
+    guides: {
+      meta: [
+        {
+          name: "WordPress",
+          steps: [
+            "In your WordPress dashboard, open Plugins > Add New Plugin and search for “WPCode”. Install it and activate it (it is free).",
+            "Open Code Snippets > Header & Footer.",
+            "Paste the tag in the Header box, then click Save Changes.",
+            "If your site uses a cache plugin, clear its cache.",
+          ],
+        },
+        {
+          name: "Joomla, Drupal, PrestaShop or a custom site",
+          steps: [
+            "Open the template (theme) of the home page in your administration or code editor.",
+            "Find the line </head> and paste the tag just before it.",
+            "Save and publish, then clear the cache if there is one.",
+          ],
+        },
+      ],
+      file: [
+        {
+          name: "Hosting panel (cPanel, hPanel, Plesk)",
+          steps: [
+            "Download the file with the button above.",
+            "Log in to your hosting panel and open the File Manager.",
+            "Open the main folder of the website: usually public_html, www, htdocs or httpdocs (the one that contains index.php or index.html).",
+            "Upload the file there, without renaming it.",
+            "Open the address shown above: you should see the code.",
+          ],
+        },
+        {
+          name: "FTP (FileZilla)",
+          steps: [
+            "Download the file with the button above.",
+            "Connect to your website with your FTP details.",
+            "On the server side, open the folder that contains the home page (public_html, www or htdocs).",
+            "Drag the file into it, then open the address shown above to check.",
+          ],
+        },
+      ],
+      dns: [
+        {
+          name: "Cloudflare",
+          steps: [
+            "Log in to dash.cloudflare.com and select your domain.",
+            "Open DNS > Records and click Add record.",
+            "Type: TXT. Name: _vigilo. Content: the value shown above. Click Save.",
+          ],
+        },
+        {
+          name: "OVHcloud",
+          steps: [
+            "In the OVHcloud Control Panel, open Web Cloud > Domain names and select your domain.",
+            "Open the DNS zone tab and click Add an entry.",
+            "Choose TXT, enter _vigilo as the sub-domain and the value shown above, then confirm.",
+          ],
+        },
+        {
+          name: "GoDaddy",
+          steps: [
+            "Open My Products, find your domain and click DNS.",
+            "Click Add New Record and choose TXT.",
+            "Name: _vigilo. Value: the value shown above. Click Save.",
+          ],
+        },
+        {
+          name: "IONOS",
+          steps: [
+            "Open Domains & SSL, select your domain, then open DNS.",
+            "Click Add record and choose TXT.",
+            "Host name: _vigilo. Value: the value shown above. Click Save.",
+          ],
+        },
+        {
+          name: "Another provider",
+          steps: [
+            "Log in where you bought your domain name and look for “DNS zone”, “DNS records” or “Manage DNS”.",
+            "Add a record of type TXT.",
+            "Name (or Host): _vigilo. Some providers ask for the full name shown above instead. Value: the value shown above.",
+            "Save. The record can take up to an hour to appear.",
+          ],
+        },
+      ],
+    } as Record<ProofMethod, Guide[]>,
     expires: (time: string) => `This code is valid until ${time}.`,
+    waiting:
+      "Waiting for the code. Vigilo checks by itself every 30 seconds. You can leave and come back later: this browser remembers the code until it is verified.",
+    lastChecked: (time: string) => `Last check at ${time}: not published yet.`,
+    paused: "Automatic checks are paused. Click “Check now” once the code is published.",
     verify: "Check now",
     verifying: "Checking…",
     newCode: "Get a new code",
     verified: (domain: string) => `${domain} is verified`,
     validUntil: (time: string) => `The proof is valid until ${time}.`,
     keepProof:
-      "Leave the record or the file in place: it is checked again before each active scan. Remove it to withdraw your permission.",
+      "Leave the tag, the file or the record in place: it is checked again before each active scan. Remove it to withdraw your permission.",
+    hosted: (platform: string) =>
+      `Your website runs on ${platform}. ${platform} looks after the security of its own servers and does not allow anyone to scan them, so the active scan does not apply. The check-up above stays valid.`,
     conditionsTitle: "Before you start",
     conditions: [
       "For about 10 minutes, Vigilo sends test requests to this website with Nuclei and OWASP ZAP.",

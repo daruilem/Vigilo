@@ -27,6 +27,7 @@ import os
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, Literal
 
+import httpx
 from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi import Path as PathParam
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,12 +38,20 @@ from vigilo import __version__, errors, lab
 from vigilo.active import consent
 from vigilo.active.jobs import JobError, JobManager
 from vigilo.active.runner import ScanPlan
+from vigilo.checks import cms
 from vigilo.clientip import client_ip, parse_networks
 from vigilo.errors import ScanError
 from vigilo.i18n import localize_event, localize_report, translate
 from vigilo.models import Platform, ScanReport
-from vigilo.net import make_client
-from vigilo.ownership import Method, check_pass, create_challenge, verify_ownership
+from vigilo.net import fetch_page, make_client
+from vigilo.ownership import (
+    Method,
+    OwnershipPass,
+    check_pass,
+    create_challenge,
+    verify_any,
+    verify_ownership,
+)
 from vigilo.pdf import file_name, render_report
 from vigilo.ratelimit import RateLimiter
 from vigilo.scanner import Event, scan
@@ -72,7 +81,8 @@ DOCS_ENABLED = os.environ.get("VIGILO_DOCS", "0") == "1"
 
 MAX_BODY_BYTES = 1_000_000
 PDFS_PER_WINDOW = _env_int("VIGILO_PDFS_PER_WINDOW", 30)
-VERIFICATIONS_PER_WINDOW = _env_int("VIGILO_VERIFICATIONS_PER_WINDOW", 20)
+# The page checks a pending proof every 30 seconds by itself: 20 per window, plus clicks.
+VERIFICATIONS_PER_WINDOW = _env_int("VIGILO_VERIFICATIONS_PER_WINDOW", 60)
 
 limiter = RateLimiter(SCANS_PER_WINDOW, WINDOW_SECONDS)
 pdf_limiter = RateLimiter(PDFS_PER_WINDOW, WINDOW_SECONDS)
@@ -334,22 +344,30 @@ class DnsProof(BaseModel):
 
 
 class FileProof(BaseModel):
+    name: str
     url: str
     content: str
+
+
+class MetaProof(BaseModel):
+    tag: str
 
 
 class ChallengeResponse(BaseModel):
     domain: str
     token: str
     expires_at: int = Field(description="Unix time after which the code is refused.")
-    dns: DnsProof
+    meta: MetaProof
     file: FileProof
+    dns: DnsProof
 
 
 class VerifyRequest(BaseModel):
     target: str = Field(min_length=1, max_length=MAX_TARGET_LENGTH)
     token: str = Field(min_length=1, max_length=MAX_TOKEN_LENGTH)
-    method: Method
+    method: Method | Literal["auto"] = Field(
+        default="auto", description="`auto` looks for the code with every method."
+    )
     lang: Language = "en"
 
 
@@ -372,18 +390,58 @@ def _ownership_domain(request: Request, target: str, lang: str) -> str:
         raise HTTPException(status_code=422, detail=_error(exc.code, exc.message, lang)) from exc
 
 
+async def _hosted_platform(domain: str) -> str | None:
+    """The hosted platform the site runs on (Shopify, Wix...), if any.
+
+    Their sites live on the platform's servers: an active scan would test the platform,
+    whose terms forbid it, and the platform handles security updates anyway.
+    """
+    lab_target = LAB_TARGETS.get(domain)
+    url = f"{lab_target.base_url}/" if lab_target else f"https://{domain}/"
+    try:
+        async with make_client(allow_private=lab_target is not None) as http:
+            response = await fetch_page(http, url)
+    except httpx.HTTPError:
+        return None  # unreachable now: the proof check will say so
+    detection = cms.detect(
+        response.content.decode("utf-8", "replace"), response.headers.get("x-generator", "")
+    )
+    return detection.cms.name if detection and detection.cms.hosted else None
+
+
+async def _refuse_hosted(domain: str, lang: str) -> None:
+    platform = await _hosted_platform(domain)
+    if platform is not None:
+        raise _refuse(
+            422, "hosted_platform", errors.HOSTED_PLATFORM.format(platform=platform), lang
+        )
+
+
 @app.post("/api/v1/ownership/challenge")
 async def ownership_challenge(body: ChallengeRequest, request: Request) -> ChallengeResponse:
-    """A verification code to publish in DNS or in a file. No network activity."""
+    """A verification code to publish, with the three ways to publish it.
+
+    Only the home page is read, to refuse sites on hosted platforms straight away.
+    """
     domain = _ownership_domain(request, body.target, body.lang)
+    await _refuse_hosted(domain, body.lang)
     challenge = create_challenge(domain)
     return ChallengeResponse(
         domain=domain,
         token=challenge.token,
         expires_at=challenge.expires_at,
+        meta=MetaProof(tag=challenge.meta_tag),
+        file=FileProof(name=challenge.file_name, url=challenge.file_url, content=challenge.token),
         dns=DnsProof(name=challenge.dns_name, value=challenge.dns_value),
-        file=FileProof(url=challenge.file_url, content=challenge.token),
     )
+
+
+async def _verify(
+    domain: str, token: str, method: Method | Literal["auto"], **kwargs: Any
+) -> OwnershipPass:
+    if method == "auto":
+        return await verify_any(domain, token, **kwargs)
+    return await verify_ownership(domain, token, Method(method), **kwargs)
 
 
 @app.post("/api/v1/ownership/verify")
@@ -393,10 +451,10 @@ async def ownership_verify(body: VerifyRequest, request: Request) -> VerifyRespo
     try:
         lab_target = LAB_TARGETS.get(domain)
         if lab_target is None:
-            proof = await verify_ownership(domain, body.token, body.method)
+            proof = await _verify(domain, body.token, body.method)
         else:
             async with make_client(allow_private=True) as http:
-                proof = await verify_ownership(
+                proof = await _verify(
                     domain, body.token, body.method, http=http, base_url=lab_target.base_url
                 )
     except ScanError as exc:
@@ -491,6 +549,7 @@ async def start_active_scan(body: ActiveScanRequest, request: Request) -> Active
     if not active_target_limiter.allow(domain):
         raise _refuse(429, "target_rate_limited", errors.ACTIVE_TARGET_LIMITED, lang)
 
+    await _refuse_hosted(domain, lang)
     try:
         plan = await _plan(domain, body.token, method)
         job = active_jobs.start(plan, lang)

@@ -137,11 +137,11 @@ export function requestChallenge(target: string, lang: string): Promise<Ownershi
   return postJson("/api/v1/ownership/challenge", { target, lang });
 }
 
-/** Asks the server to look for the published code. */
+/** Asks the server to look for the published code; `auto` tries every method. */
 export function verifyOwnership(
   target: string,
   token: string,
-  method: ProofMethod,
+  method: ProofMethod | "auto",
   lang: string,
 ): Promise<OwnershipProof> {
   return postJson("/api/v1/ownership/verify", { target, token, method, lang });

@@ -90,3 +90,25 @@ ACTIVE_ALREADY_RUNNING = "An active scan of this website is already running. Wai
 ACTIVE_BUSY = "The active scanner is busy with another website. Try again in a few minutes."
 ACTIVE_NOT_FOUND = "This active scan does not exist or has expired. Start a new one."
 ACTIVE_FAILED = "The scanning tools could not run, so there are no results. Try again later."
+
+# Domain ownership: HTML tag and automatic check.
+META_NOT_FOUND = (
+    "We did not find the Vigilo tag in the home page of {domain}. It must be in the <head> "
+    "section, and the change must be saved and published."
+)
+META_MISMATCH = (
+    "The home page of {domain} has a Vigilo tag, but with another code. Replace it with the "
+    "one shown, then try again."
+)
+PAGE_REDIRECTED = (
+    "The home page of {domain} redirects to {other}. Verify that address instead, or use "
+    "the file or DNS method."
+)
+PROOF_NOT_FOUND = (
+    "The code is not published on {domain} yet: not in the home page, not in the file "
+    "{url} and not in DNS. Vigilo keeps checking."
+)
+HOSTED_PLATFORM = (
+    "This website runs on {platform}, which manages its security and does not allow "
+    "scanning its servers. The active scan does not apply to it."
+)

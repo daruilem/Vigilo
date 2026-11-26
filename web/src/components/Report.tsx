@@ -48,6 +48,9 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
   const { t, locale } = useI18n();
   const { issues, passed, errors } = splitFindings(report.findings);
   const active = report.kind === "active";
+  // Sites on Shopify, Wix... run on the platform's servers: no active scan for them.
+  const cms = report.findings.find((f) => f.id === "cms.detected")?.evidence;
+  const hostedPlatform = cms?.hosted === true ? String(cms.platform) : null;
   const counts = countBySeverity(issues);
   // One hosting choice for the whole report: a site has a single hosting.
   const [platform, setPlatform] = useState<Platform>("apache");
@@ -258,7 +261,11 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
       {!active && !previous && <Progress report={report} previous={null} />}
 
       {ACTIVE_SCAN_ENABLED && !active && onActiveReport && (
-        <OwnershipVerification target={report.target} onActiveReport={onActiveReport} />
+        <OwnershipVerification
+          target={report.target}
+          onActiveReport={onActiveReport}
+          hostedPlatform={hostedPlatform}
+        />
       )}
     </article>
   );
