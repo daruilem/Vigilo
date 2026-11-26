@@ -9,6 +9,8 @@ most of the web without a security team: small businesses, associations, freelan
 and the agencies who build their sites.
 
 [![CI](https://github.com/daruilem/Vigilo/actions/workflows/ci.yml/badge.svg)](https://github.com/daruilem/Vigilo/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/daruilem/Vigilo/actions/workflows/codeql.yml/badge.svg)](https://github.com/daruilem/Vigilo/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/daruilem/Vigilo)](https://github.com/daruilem/Vigilo/releases)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Next.js](https://img.shields.io/badge/next.js-16-black)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -69,6 +71,30 @@ self-hosted at build time, so visitors' browsers never contact Google.
 docker compose up --build
 # web: http://localhost:3000   API: http://localhost:8000
 ```
+
+### Published images
+
+Each release publishes signed images to GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/daruilem/vigilo-api:0.1.0
+docker pull ghcr.io/daruilem/vigilo-web:0.1.0
+```
+
+The web image is built for an API at `http://localhost:8000`; to serve it from another
+address, build it yourself with `--build-arg NEXT_PUBLIC_VIGILO_API_URL=...`.
+
+#### Verifying the images
+
+Images are signed without long-lived keys: the signature proves the image was built by
+this repository's release workflow from a tag.
+
+```bash
+cosign verify ghcr.io/daruilem/vigilo-api:0.1.0 \n  --certificate-identity-regexp '^https://github.com/daruilem/Vigilo/\.github/workflows/release\.yml@refs/tags/v' \n  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+The SBOM (SPDX) of each image is attached to the GitHub release and to the image itself
+(`docker buildx imagetools inspect ghcr.io/daruilem/vigilo-api:0.1.0 --format '{{ json .SBOM }}'`).
 
 ### Local development
 
@@ -152,6 +178,9 @@ header checks, and the service is hardened against being turned into a weapon:
   `Server` header, interactive docs off by default, generic error messages that never
   expose internals.
 - **Containers.** Non-root users, read-only file systems, all Linux capabilities dropped.
+- **Supply chain.** Dependabot keeps Python, npm, Actions and base images up to date,
+  CodeQL analyses every change, and released images are signed with Sigstore and ship
+  with an SBOM and build provenance (see [Verifying the images](#verifying-the-images)).
 
 Code that runs in a browser is always visible to its user; Vigilo's front end simply
 contains nothing secret.

@@ -9,6 +9,14 @@ Use GitHub's private vulnerability reporting instead
 You can expect an acknowledgement within 7 days. Please include steps to reproduce
 and the version you tested.
 
+## Supported versions
+
+Security fixes go into the latest release only.
+
+| Version | Supported |
+|---|---|
+| 0.1.x | yes |
+
 ## Scope
 
 Of particular interest:
