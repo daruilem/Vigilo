@@ -6,6 +6,7 @@ import { fetchReportPdf, pdfFileName } from "@/lib/api";
 
 import { DATE_LOCALES } from "@/i18n";
 import { useI18n } from "@/i18n/client";
+import type { Snapshot } from "@/lib/history";
 import { countBySeverity, sectionNumber, splitFindings } from "@/lib/report";
 import type { Platform, ScanReport } from "@/lib/types";
 
@@ -13,6 +14,7 @@ import { GradeScale } from "./GradeScale";
 import { GradeStamp } from "./GradeStamp";
 import { IssueSection } from "./IssueSection";
 import { OwnershipVerification } from "./OwnershipVerification";
+import { Progress } from "./Progress";
 import { Label, Section, SectionNumber } from "./Section";
 import { SeverityMark } from "./SeverityMark";
 
@@ -22,6 +24,8 @@ const ACTIVE_SCAN_ENABLED = process.env.NEXT_PUBLIC_VIGILO_ACTIVE_SCAN === "1";
 interface ReportProps {
   report: ScanReport;
   onNewCheck: () => void;
+  /** Summary of the previous check of this site kept on this device, if any. */
+  previous?: Snapshot | null;
 }
 
 const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
@@ -34,7 +38,7 @@ const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
 };
 
 export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Report(
-  { report, onNewCheck },
+  { report, onNewCheck, previous = null },
   headingRef,
 ) {
   const { t, locale } = useI18n();
@@ -145,6 +149,8 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
         )}
       </div>
 
+      {previous && <Progress report={report} previous={previous} />}
+
       {issues.length > 0 && (
         <p className="mb-2 text-sm text-muted md:ms-[208px] print:hidden">{t.report.hostingNote}</p>
       )}
@@ -242,6 +248,8 @@ export const Report = forwardRef<HTMLHeadingElement, ReportProps>(function Repor
           </div>
         </Section>
       )}
+
+      {!previous && <Progress report={report} previous={null} />}
 
       {ACTIVE_SCAN_ENABLED && <OwnershipVerification target={report.target} />}
     </article>

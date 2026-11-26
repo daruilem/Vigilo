@@ -34,7 +34,7 @@ export const en = {
         term: "Not checked",
         text: "Your code, plugins, passwords or forms. No attack is ever attempted.",
       },
-      { term: "Kept", text: "Nothing. The report disappears when you close the page." },
+      { term: "Kept", text: "Nothing on our servers. The report disappears when you close the page." },
     ],
     methodLink: "How the check works",
   },
@@ -76,7 +76,7 @@ export const en = {
     method: "Method",
     methodValue: "Passive. One request per resource. No attack tested.",
     kept: "Kept",
-    keptValue: "Nothing. This report disappears when you close the page.",
+    keptValue: "Nothing on our servers. This report disappears when you close the page, unless you ask this browser to remember a summary.",
     downloadPdf: "Download PDF",
     preparingPdf: "Preparing the PDF…",
     pdfFailed: "The PDF could not be created. Try again in a moment.",
@@ -102,6 +102,30 @@ export const en = {
     hostingNote: "Your choice of hosting applies to every section.",
     notGraded: "Not graded",
     notGradedHint: "Legal point: it does not change the grade.",
+  },
+  progress: {
+    rail: "Progress",
+    title: "Since your last check",
+    lastCheck: (date: string) => `Last check: ${date}`,
+    score: "Score",
+    grade: "Grade",
+    fixed: (n: number) => (n === 1 ? "1 problem fixed" : `${n} problems fixed`),
+    added: (n: number) => (n === 1 ? "1 new problem" : `${n} new problems`),
+    remaining: (n: number) =>
+      n === 0
+        ? "No problem left from last time"
+        : n === 1
+          ? "1 problem from last time still to fix"
+          : `${n} problems from last time still to fix`,
+    noChange: "Nothing changed since your last check.",
+    forget: "Forget this website on this device",
+    forgotten: "Removed from this device. Nothing else was kept.",
+    offerTitle: "See your progress next time",
+    offerText:
+      "After you apply the fixes, check again: Vigilo will show what was fixed and what is new. For that, this browser keeps a short summary of this report (date, score, grade and the names of the problems). It never leaves your device.",
+    remember: "Remember on this device",
+    remembered: "Saved on this device. Check again after your fixes.",
+    storageFailed: "This browser does not allow saving (private browsing?). Nothing was kept.",
   },
   grades: {
     rail: "Grade",
@@ -225,7 +249,8 @@ export const en = {
         label: "Data",
         title: "What is kept",
         items: [
-          "Reports are not stored. They exist only in your browser until you close the page.",
+          "Reports are not stored on the server. They exist only in your browser until you close the page.",
+          "If you choose Remember on this device, your browser keeps a short summary of the report (date, score, grade and the names of the problems) to show your progress next time. It is never sent to Vigilo, and Forget this website removes it.",
           "To prevent abuse, the service counts checks per IP address. This count is kept in memory for 10 minutes, then forgotten.",
           "PDF files are created when you click Download and are not kept on the server. Each report carries a signature, so a modified report cannot be turned into a PDF.",
         ],

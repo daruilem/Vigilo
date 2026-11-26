@@ -32,7 +32,7 @@ export const fr: Messages = {
         term: "Non vérifié",
         text: "Votre code, vos extensions, vos mots de passe ou vos formulaires. Aucune attaque n'est jamais tentée.",
       },
-      { term: "Conservé", text: "Rien. Le rapport disparaît quand vous fermez la page." },
+      { term: "Conservé", text: "Rien sur nos serveurs. Le rapport disparaît quand vous fermez la page." },
     ],
     methodLink: "Comment fonctionne l'analyse",
   },
@@ -73,7 +73,7 @@ export const fr: Messages = {
     method: "Méthode",
     methodValue: "Passive. Une requête par ressource. Aucune attaque testée.",
     kept: "Conservé",
-    keptValue: "Rien. Ce rapport disparaît quand vous fermez la page.",
+    keptValue: "Rien sur nos serveurs. Ce rapport disparaît quand vous fermez la page, sauf si vous demandez à ce navigateur d'en mémoriser un résumé.",
     downloadPdf: "Télécharger le PDF",
     preparingPdf: "Préparation du PDF…",
     pdfFailed: "Le PDF n'a pas pu être créé. Réessayez dans un instant.",
@@ -100,6 +100,30 @@ export const fr: Messages = {
     hostingNote: "Votre choix d'hébergement s'applique à toutes les sections.",
     notGraded: "Non noté",
     notGradedHint: "Point juridique : il ne change pas la note.",
+  },
+  progress: {
+    rail: "Progrès",
+    title: "Depuis votre dernière vérification",
+    lastCheck: (date: string) => `Dernière vérification : ${date}`,
+    score: "Score",
+    grade: "Note",
+    fixed: (n: number) => (n === 1 ? "1 problème corrigé" : `${n} problèmes corrigés`),
+    added: (n: number) => (n === 1 ? "1 nouveau problème" : `${n} nouveaux problèmes`),
+    remaining: (n: number) =>
+      n === 0
+        ? "Plus aucun problème de la dernière fois"
+        : n === 1
+          ? "1 problème de la dernière fois reste à corriger"
+          : `${n} problèmes de la dernière fois restent à corriger`,
+    noChange: "Rien n'a changé depuis votre dernière vérification.",
+    forget: "Oublier ce site sur cet appareil",
+    forgotten: "Supprimé de cet appareil. Rien d'autre n'était conservé.",
+    offerTitle: "Voir vos progrès la prochaine fois",
+    offerText:
+      "Après avoir appliqué les corrections, vérifiez à nouveau : Vigilo montrera ce qui a été corrigé et ce qui est nouveau. Pour cela, ce navigateur garde un court résumé de ce rapport (date, score, note et noms des problèmes). Il ne quitte jamais votre appareil.",
+    remember: "Mémoriser sur cet appareil",
+    remembered: "Enregistré sur cet appareil. Vérifiez à nouveau après vos corrections.",
+    storageFailed: "Ce navigateur n'autorise pas l'enregistrement (navigation privée ?). Rien n'a été conservé.",
   },
   grades: {
     rail: "Note",
@@ -223,7 +247,8 @@ export const fr: Messages = {
         label: "Données",
         title: "Ce qui est conservé",
         items: [
-          "Les rapports ne sont pas conservés. Ils n'existent que dans votre navigateur jusqu'à ce que vous fermiez la page.",
+          "Les rapports ne sont pas conservés sur le serveur. Ils n'existent que dans votre navigateur jusqu'à ce que vous fermiez la page.",
+          "Si vous choisissez Mémoriser sur cet appareil, votre navigateur garde un court résumé du rapport (date, score, note et noms des problèmes) pour montrer vos progrès la prochaine fois. Il n'est jamais envoyé à Vigilo, et Oublier ce site le supprime.",
           "Pour éviter les abus, le service compte les analyses par adresse IP. Ce compteur est gardé en mémoire 10 minutes, puis oublié.",
           "Les PDF sont créés au moment du téléchargement et ne sont pas conservés sur le serveur. Chaque rapport porte une signature : un rapport modifié ne peut pas être converti en PDF.",
         ],

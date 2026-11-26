@@ -22,6 +22,8 @@ First public release: a passive website security check-up.
 - **Web interface** in English, French, German and Arabic (right-to-left), live scan log
   over Server-Sent Events, WCAG 2.1 AA target.
 - **Signed PDF reports** in the reader's language, including right-to-left Arabic.
+- **Progress since the last check**: opt-in summary kept in the visitor's browser; the next
+  check of the site shows what was fixed, what is new and the score change.
 - **CLI** (`vigilo scan`, `--json`, `--markdown`, `--lang`, `--fail-under` for CI) and **HTTP API**.
 - **GitHub Action** (`uses: daruilem/Vigilo@v0.1.0`): grade and fixes in the job summary,
   `score` and `grade` outputs, optional `fail-under` threshold.
@@ -30,6 +32,7 @@ First public release: a passive website security check-up.
 - **Domain ownership verification** (DNS TXT record or `.well-known` file), groundwork for
   the upcoming verified active scan. Hidden in the interface unless
   `NEXT_PUBLIC_VIGILO_ACTIVE_SCAN=1`.
+- **Browser tests** (Playwright) with axe accessibility checks, desktop and mobile.
 - **Supply chain**: Dependabot, CodeQL, container images on GitHub Container Registry
   signed with Sigstore, with SBOM and build provenance.
 

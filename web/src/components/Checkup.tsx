@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useI18n } from "@/i18n/client";
 import { streamScan } from "@/lib/api";
+import { loadSnapshot, saveSnapshot, type Snapshot } from "@/lib/history";
 import { displayHost } from "@/lib/report";
 import type { ScanFailure, ScanReport, Step } from "@/lib/types";
 
@@ -17,7 +18,7 @@ type Phase =
   | { kind: "idle"; target: string }
   | { kind: "scanning"; target: string; steps: Step[] }
   | { kind: "failed"; target: string; steps: Step[]; failure: ScanFailure | null }
-  | { kind: "report"; target: string; report: ScanReport };
+  | { kind: "report"; target: string; report: ScanReport; previous: Snapshot | null };
 
 /** The whole check-up flow on one page: form, live log, then report or error. */
 export function Checkup() {
@@ -45,7 +46,12 @@ export function Checkup() {
         updateSteps((steps) =>
           steps.map((s) => (s.id === id ? { ...s, state, at: new Date() } : s)),
         ),
-      onReport: (report) => setPhase({ kind: "report", target, report }),
+      onReport: (report) => {
+        // A summary exists only if the visitor asked to remember this site: keep it current.
+        const previous = loadSnapshot(report.target);
+        if (previous) saveSnapshot(report);
+        setPhase({ kind: "report", target, report, previous });
+      },
       onFailure: (failure) =>
         setPhase((p) => ({
           kind: "failed",
@@ -62,7 +68,14 @@ export function Checkup() {
   }
 
   if (phase.kind === "report") {
-    return <Report ref={headingRef} report={phase.report} onNewCheck={() => reset()} />;
+    return (
+      <Report
+        ref={headingRef}
+        report={phase.report}
+        previous={phase.previous}
+        onNewCheck={() => reset()}
+      />
+    );
   }
 
   if (phase.kind === "scanning" || phase.kind === "failed") {

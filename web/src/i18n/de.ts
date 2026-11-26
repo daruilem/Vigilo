@@ -32,7 +32,7 @@ export const de: Messages = {
         term: "Nicht geprüft",
         text: "Ihr Code, Ihre Plugins, Passwörter oder Formulare. Es wird nie ein Angriff versucht.",
       },
-      { term: "Gespeichert", text: "Nichts. Der Bericht verschwindet, wenn Sie die Seite schließen." },
+      { term: "Gespeichert", text: "Nichts auf unseren Servern. Der Bericht verschwindet, wenn Sie die Seite schließen." },
     ],
     methodLink: "So funktioniert die Prüfung",
   },
@@ -73,7 +73,7 @@ export const de: Messages = {
     method: "Methode",
     methodValue: "Passiv. Eine Anfrage pro Ressource. Kein Angriff getestet.",
     kept: "Gespeichert",
-    keptValue: "Nichts. Dieser Bericht verschwindet, wenn Sie die Seite schließen.",
+    keptValue: "Nichts auf unseren Servern. Dieser Bericht verschwindet, wenn Sie die Seite schließen, außer Sie lassen diesen Browser eine Zusammenfassung merken.",
     downloadPdf: "PDF herunterladen",
     preparingPdf: "PDF wird erstellt…",
     pdfFailed: "Das PDF konnte nicht erstellt werden. Versuchen Sie es gleich noch einmal.",
@@ -100,6 +100,30 @@ export const de: Messages = {
     hostingNote: "Ihre Hosting-Auswahl gilt für alle Abschnitte.",
     notGraded: "Ohne Wertung",
     notGradedHint: "Rechtlicher Punkt: Er ändert die Note nicht.",
+  },
+  progress: {
+    rail: "Fortschritt",
+    title: "Seit Ihrer letzten Prüfung",
+    lastCheck: (date: string) => `Letzte Prüfung: ${date}`,
+    score: "Punkte",
+    grade: "Note",
+    fixed: (n: number) => (n === 1 ? "1 Problem behoben" : `${n} Probleme behoben`),
+    added: (n: number) => (n === 1 ? "1 neues Problem" : `${n} neue Probleme`),
+    remaining: (n: number) =>
+      n === 0
+        ? "Kein Problem vom letzten Mal mehr offen"
+        : n === 1
+          ? "1 Problem vom letzten Mal noch offen"
+          : `${n} Probleme vom letzten Mal noch offen`,
+    noChange: "Seit Ihrer letzten Prüfung hat sich nichts geändert.",
+    forget: "Diese Website auf diesem Gerät vergessen",
+    forgotten: "Von diesem Gerät entfernt. Sonst wurde nichts gespeichert.",
+    offerTitle: "Beim nächsten Mal den Fortschritt sehen",
+    offerText:
+      "Prüfen Sie nach den Korrekturen erneut: Vigilo zeigt dann, was behoben wurde und was neu ist. Dafür speichert dieser Browser eine kurze Zusammenfassung dieses Berichts (Datum, Punkte, Note und die Namen der Probleme). Sie verlässt Ihr Gerät nie.",
+    remember: "Auf diesem Gerät merken",
+    remembered: "Auf diesem Gerät gespeichert. Prüfen Sie nach Ihren Korrekturen erneut.",
+    storageFailed: "Dieser Browser erlaubt kein Speichern (privates Fenster?). Es wurde nichts gespeichert.",
   },
   grades: {
     rail: "Note",
@@ -223,7 +247,8 @@ export const de: Messages = {
         label: "Daten",
         title: "Was gespeichert wird",
         items: [
-          "Berichte werden nicht gespeichert. Sie existieren nur in Ihrem Browser, bis Sie die Seite schließen.",
+          "Berichte werden nicht auf dem Server gespeichert. Sie existieren nur in Ihrem Browser, bis Sie die Seite schließen.",
+          "Wenn Sie Auf diesem Gerät merken wählen, speichert Ihr Browser eine kurze Zusammenfassung des Berichts (Datum, Punkte, Note und die Namen der Probleme), um beim nächsten Mal Ihren Fortschritt zu zeigen. Sie wird nie an Vigilo gesendet, und Diese Website vergessen löscht sie.",
           "Zum Schutz vor Missbrauch zählt der Dienst Prüfungen pro IP-Adresse. Dieser Zähler bleibt 10 Minuten im Arbeitsspeicher und wird dann vergessen.",
           "PDF-Dateien werden beim Herunterladen erstellt und nicht auf dem Server gespeichert. Jeder Bericht trägt eine Signatur, daher lässt sich ein veränderter Bericht nicht als PDF erstellen.",
         ],
