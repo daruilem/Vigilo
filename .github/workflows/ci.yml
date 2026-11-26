@@ -30,6 +30,43 @@ jobs:
       - name: Tests
         run: pytest --cov=vigilo --cov-report=term-missing
 
+  action:
+    # Runs this repository's GitHub Action against a throwaway local web server.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Local test site
+        run: |
+          echo "127.0.0.1 selftest.vigilo.test" | sudo tee -a /etc/hosts
+          mkdir site && echo "<html lang=en><title>test</title></html>" > site/index.html
+          sudo python3 -m http.server 80 --bind 127.0.0.1 --directory site > /dev/null 2>&1 &
+          until curl -s -o /dev/null http://selftest.vigilo.test/; do sleep 1; done
+      - id: vigilo
+        uses: ./
+        with:
+          target: selftest.vigilo.test
+          allow-private: "true"
+          lang: de
+      - id: strict
+        uses: ./
+        continue-on-error: true
+        with:
+          target: selftest.vigilo.test
+          allow-private: "true"
+          fail-under: "101"
+          summary: "false"
+      - name: Check the outputs
+        env:
+          GRADE: ${{ steps.vigilo.outputs.grade }}
+          SCORE: ${{ steps.vigilo.outputs.score }}
+          REPORT: ${{ steps.vigilo.outputs.report }}
+          STRICT: ${{ steps.strict.outcome }}
+        run: |
+          echo "grade=$GRADE score=$SCORE strict=$STRICT"
+          [[ "$GRADE" =~ ^[A-F]$ ]]
+          [ -s "$REPORT" ]
+          [ "$STRICT" = "failure" ]
+
   docker:
     runs-on: ubuntu-latest
     steps:

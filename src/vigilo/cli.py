@@ -6,13 +6,16 @@ import argparse
 import asyncio
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table
 
 from vigilo import __version__
 from vigilo.errors import ScanError
-from vigilo.models import ScanReport, Status
+from vigilo.i18n import localize_report
+from vigilo.markdown import render_markdown
+from vigilo.models import Platform, ScanReport, Status
 from vigilo.scanner import scan
 
 STATUS_STYLE = {
@@ -22,6 +25,7 @@ STATUS_STYLE = {
     Status.INFO: "[blue]INFO[/]",
     Status.ERROR: "[magenta]ERROR[/]",
 }
+LANGUAGES = ("en", "fr", "de", "ar")
 GRADE_STYLE = {"A": "green", "B": "green", "C": "yellow", "D": "red", "F": "red"}
 
 
@@ -44,6 +48,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="Allow scanning hosts that resolve to private addresses (local testing only).",
     )
+    p_scan.add_argument(
+        "--lang",
+        choices=LANGUAGES,
+        default="en",
+        help="Language of the report (default: en).",
+    )
+    p_scan.add_argument(
+        "--platform",
+        choices=[p.value for p in Platform],
+        default=Platform.APACHE.value,
+        help="Hosting whose fixes appear in the Markdown report (default: apache).",
+    )
+    p_scan.add_argument(
+        "--markdown",
+        type=Path,
+        metavar="FILE",
+        help="Also append the report as Markdown to FILE (e.g. $GITHUB_STEP_SUMMARY).",
+    )
 
     args = parser.parse_args(argv)
     console = Console()
@@ -51,11 +73,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         report = asyncio.run(scan(args.target, allow_private=args.allow_private))
     except ScanError as exc:
-        console.print(f"[red]Error:[/] {exc}")
+        Console(stderr=True).print(f"[red]Error:[/] {exc}")
         return 1
 
+    if args.lang != "en":
+        report = localize_report(report, args.lang)
+    if args.markdown:
+        with args.markdown.open("a", encoding="utf-8", newline="\n") as summary:
+            summary.write(render_markdown(report, args.lang, Platform(args.platform)))
+
     if args.json:
-        print(report.model_dump_json(indent=2))
+        # Always UTF-8, whatever the console encoding (cp1252 on Windows).
+        sys.stdout.buffer.write(report.model_dump_json(indent=2).encode() + b"\n")
+        sys.stdout.flush()
     else:
         render(report, console)
 

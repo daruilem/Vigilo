@@ -22,7 +22,9 @@ First public release: a passive website security check-up.
 - **Web interface** in English, French, German and Arabic (right-to-left), live scan log
   over Server-Sent Events, WCAG 2.1 AA target.
 - **Signed PDF reports** in the reader's language, including right-to-left Arabic.
-- **CLI** (`vigilo scan`, `--json`, `--fail-under` for CI) and **HTTP API**.
+- **CLI** (`vigilo scan`, `--json`, `--markdown`, `--lang`, `--fail-under` for CI) and **HTTP API**.
+- **GitHub Action** (`uses: daruilem/Vigilo@v0.1.0`): grade and fixes in the job summary,
+  `score` and `grade` outputs, optional `fail-under` threshold.
 - **Hardening**: SSRF and DNS rebinding protection, per-client and per-target rate limits,
   scan time and size limits, strict nonce-based CSP, hardened containers.
 - **Domain ownership verification** (DNS TXT record or `.well-known` file), groundwork for

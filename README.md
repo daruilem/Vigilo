@@ -122,7 +122,27 @@ npm run dev                      # http://localhost:3000
 vigilo scan example.com               # human-readable report
 vigilo scan example.com --json        # machine-readable JSON
 vigilo scan example.com --fail-under 80   # exit code 2 if the score is below 80 (CI use)
+vigilo scan example.com --lang de --markdown report.md --platform nginx
+                                      # German report, also appended as Markdown
 ```
+
+### GitHub Action
+
+Check your website on every deployment, with the grade and the fixes in the job summary:
+
+```yaml
+- uses: daruilem/Vigilo@v0.1.0
+  with:
+    target: www.example.com    # a site you run
+    fail-under: 80             # optional: fail the job below this score
+    lang: en                   # en, fr, de or ar
+    platform: nginx            # apache, nginx, cloudflare or wordpress
+```
+
+Outputs: `score`, `grade` and `report` (path of the JSON report). To check a staging
+container started earlier in the same job, add `allow-private: "true"`. Inputs reach
+the shell only through environment variables, and values read from the website are
+escaped before they enter the Markdown summary.
 
 ### HTTP API
 
@@ -298,6 +318,7 @@ npm run build
 - [x] Privacy and legal basics (Google Fonts, trackers, Impressum, mentions légales)
 - [x] Hardening: DNS rebinding protection, per-target limits, strict CSP
 - [x] Interface and reports in English, French, German and Arabic (right-to-left)
+- [x] GitHub Action with the report in the job summary
 - [ ] Optional share links, scheduled re-checks and certificate expiry alerts
 - [x] PDF reports, signed reports, WordPress plugin updates, nested SPF lookups
 - [ ] WordPress plugins checked against a vulnerability database (needs an API key)
