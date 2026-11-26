@@ -17,3 +17,6 @@ htmlcov/
 # private working notes
 progress.md
 win-ca.pem
+
+# Active scan lab: the verification code is per run
+/lab/www/.well-known/vigilo-verification.txt

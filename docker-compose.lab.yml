@@ -1,0 +1,39 @@
+# Local lab for the active scan: OWASP Juice Shop, a deliberately vulnerable web shop,
+# reachable as http://juice.lab inside the lab network and http://127.0.0.1:8080 from
+# this machine only. Never expose it: it is vulnerable on purpose.
+#
+#   docker compose -f docker-compose.lab.yml up -d
+#
+# See "Active scan lab" in the README for the whole walkthrough.
+
+name: vigilo-lab
+
+services:
+  juice-shop:
+    image: bkimminich/juice-shop:latest
+    networks: [lab]
+    restart: "no"
+
+  front:
+    image: nginx:alpine
+    depends_on: [juice-shop]
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./lab/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./lab/www:/srv/www:ro
+    networks:
+      lab:
+        aliases: [juice.lab]
+      edge: {}
+    restart: "no"
+
+networks:
+  # No route to the internet: the vulnerable app and the scanning containers that join
+  # this network can only talk to each other.
+  lab:
+    name: vigilo-lab
+    internal: true
+  # Only used to publish the front on 127.0.0.1:8080 for this machine.
+  edge:
+    name: vigilo-lab-edge

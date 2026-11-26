@@ -8,6 +8,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+import httpx
 from rich.console import Console
 from rich.table import Table
 
@@ -67,7 +68,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Also append the report as Markdown to FILE (e.g. $GITHUB_STEP_SUMMARY).",
     )
 
+    p_prepare = sub.add_parser(
+        "prepare-active",
+        help="Install the pinned Nuclei templates used by the active scan (needs Docker).",
+    )
+    p_prepare.add_argument("--templates-version", default=None, metavar="TAG")
+
     args = parser.parse_args(argv)
+    if args.command == "prepare-active":
+        return prepare_active(args.templates_version)
     console = Console()
 
     try:
@@ -117,6 +126,21 @@ def render(report: ScanReport, console: Console) -> None:
             console.print(f"\n[bold]- {f.title}[/]\n  {f.description}")
             if f.recommendation:
                 console.print(f"  [cyan]Fix:[/] {f.recommendation}")
+
+
+def prepare_active(version: str | None) -> int:
+    from vigilo.active.runner import TEMPLATES_VERSION, ToolFailed, prepare_templates
+
+    console = Console(stderr=True)
+    chosen = version or TEMPLATES_VERSION
+    console.print(f"Installing Nuclei templates {chosen}...")
+    try:
+        count = asyncio.run(prepare_templates(chosen))
+    except (ToolFailed, httpx.HTTPError, OSError) as exc:
+        console.print(f"[red]Error:[/] {exc}")
+        return 1
+    console.print(f"[green]Done:[/] {count} templates installed.")
+    return 0
 
 
 if __name__ == "__main__":

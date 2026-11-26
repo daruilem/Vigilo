@@ -156,6 +156,10 @@ escaped before they enter the Markdown summary.
 | `POST /api/v1/scans` | Body `{"target": "example.com", "authorized": true, "lang": "en"}`. Returns the report. |
 | `GET /api/v1/scans/stream?target=…&authorized=true&lang=en` | Server-Sent Events: `progress`, then `report` or `failure`. |
 | `POST /api/v1/reports/pdf` | Body `{"report": <signed report>, "lang": "en", "platform": "nginx"}`. Returns the PDF. |
+| `POST /api/v1/ownership/challenge` | Body `{"target": "example.com"}`. A code to publish in DNS or in a file. |
+| `POST /api/v1/ownership/verify` | Body `{"target", "token", "method": "dns" \| "file"}`. Returns a signed ownership pass. |
+| `POST /api/v1/active-scans` | Body `{"target", "token", "ownership_pass", "accept_terms": true}`. Starts an active scan, returns `{"job_id"}`. |
+| `GET /api/v1/active-scans/{job_id}/stream` | Server-Sent Events of the active scan, from its start. |
 | `GET /health` | Liveness check. |
 
 Errors carry a stable code (`invalid_target`, `dns_error`, `forbidden_target`,
@@ -178,8 +182,15 @@ what to do.
 | `VIGILO_SIGNING_KEY` | random at start-up | Secret used to sign reports. Set it when running several API processes. |
 | `VIGILO_PDFS_PER_WINDOW` | `30` | PDF downloads per client IP per window |
 | `VIGILO_VERIFICATIONS_PER_WINDOW` | `20` | Domain ownership requests per client IP per window |
+| `VIGILO_ACTIVE_SCAN` | `0` | Set to `1` to accept active scans (needs Docker, see [Active scan](#active-scan-verified-owners-only)) |
+| `VIGILO_ACTIVE_SCANS_PER_DAY` | `3` | Active scans per client IP per day |
+| `VIGILO_ACTIVE_SCANS_PER_TARGET` | `2` | Active scans of the same website per day |
+| `VIGILO_MAX_ACTIVE_SCANS` | `1` | Active scans running at the same time |
+| `VIGILO_CONSENT_LOG` | *(application log)* | File where each started active scan is recorded (JSON lines) |
+| `VIGILO_SCAN_NETWORK` | `bridge` | Docker network of the scanning containers |
+| `VIGILO_LAB_TARGETS` | *(none)* | **Local lab only.** Lab hosts and where to reach them, e.g. `juice.lab=http://127.0.0.1:8080` |
 | `NEXT_PUBLIC_VIGILO_API_URL` | `http://localhost:8000` | API address used by the web interface (build time) |
-| `NEXT_PUBLIC_VIGILO_ACTIVE_SCAN` | `0` | Set to `1` to show the domain ownership verification (preview of the active scan, in progress) |
+| `NEXT_PUBLIC_VIGILO_ACTIVE_SCAN` | `0` | Set to `1` to show the domain ownership verification in the report (the active scan screens are in progress) |
 
 ## Security of Vigilo itself
 
@@ -222,6 +233,14 @@ src/vigilo/                 Python package (API, CLI, scanner)
 │   └── privacy.py          fonts, trackers, legal pages
 ├── models.py               Finding and ScanReport: the only contract between parts
 ├── guidance.py             reader-facing text: headlines, fixes per hosting, follow-ups
+├── active/                 verified active scan
+│   ├── runner.py           locked-down tool containers (Nuclei, ZAP)
+│   ├── jobs.py             background jobs, live events
+│   ├── parsers.py          tool output, scope and data filtering
+│   ├── findings.py         plain-language categories
+│   └── consent.py          consent log
+├── ownership.py            proof of domain ownership (DNS or file)
+├── lab.py                  local lab mode (.lab and .test hosts only)
 ├── i18n.py  locales/       report translation (fr, de, ar)
 ├── pdf/                    PDF rendering (ReportLab, right-to-left for Arabic), fonts (OFL)
 ├── signing.py              HMAC signatures of reports
@@ -262,6 +281,77 @@ Design principles:
 3. Add headlines and fixes for its finding ids in `guidance.py`.
 4. Register an instance in `ALL_CHECKS` in `src/vigilo/checks/__init__.py`.
 
+## Active scan (verified owners only)
+
+The check-up above is passive. Owners who want to go further can run an **active scan**:
+real scanning tools, [Nuclei](https://github.com/projectdiscovery/nuclei) and the
+[OWASP ZAP](https://www.zaproxy.org/) baseline, send test requests to their site. It is
+not a penetration test (no human, no exploitation) and it has its own grade, so the
+passive grade stays comparable between sites.
+
+Sending test requests to someone else's site is an offence (section 202c StGB and its
+equivalents), so a checkbox is not enough here:
+
+1. **Proof of ownership.** The owner publishes a code as a DNS TXT record
+   (`_vigilo.<domain>`) or as a file (`/.well-known/vigilo-verification.txt`). Codes and
+   passes are HMAC-signed, bound to the exact host name and valid 24 hours; nothing is
+   stored. `example.com` does not cover `shop.example.com`.
+2. **Checked again at launch.** Right before the tools start, the proof must still be
+   online. Removing it withdraws the permission, and a copied pass is useless alone.
+3. **Explicit consent** to the conditions, then a **consent log** entry: time, domain,
+   proof method, client IP, tools. It is the only thing kept about active scans.
+4. **Safe checks only.** Nuclei runs its web templates without the `dos`, `intrusive`,
+   `fuzz`, `bruteforce`, `rce`, `sqli`, `oast` and `headless` tags, with no out-of-band
+   callbacks (`-no-interactsh`) and 20 requests per second at most. ZAP runs its
+   baseline: a two-minute crawl and passive rules, no attack.
+5. **Throwaway, locked-down containers.** Each tool runs in its own container for one
+   scan: read-only file system, all Linux capabilities dropped, no privilege escalation,
+   memory, CPU and process limits, a hard time limit after which it is killed, and no
+   host directory mounted. Outside the lab the container has no DNS and the verified host
+   name is pinned to the address Vigilo validated, so a redirect to another host name
+   cannot be followed.
+6. **Limits.** One active scan per site at a time, 3 per client and 2 per site per day,
+   and one running at a time overall by default.
+7. **No data from the site.** Results keep the address, the parameter name and the
+   tool's description of the problem. Evidence, extracted values, requests and responses
+   are dropped. Problems the passive check-up already reports are not counted twice.
+
+The scan runs in the background (several minutes) and its log is followed live:
+`POST /api/v1/active-scans` returns a job id, `GET /api/v1/active-scans/{id}/stream`
+sends the same `progress` / `report` / `failure` events as the passive scan.
+
+### Running it on a server
+
+The API starts the tools with the `docker` command, so the machine running the API can
+start containers: give it a host of its own, never a shared one. Install the templates
+once (and after each Vigilo update) with `vigilo prepare-active`: it downloads a pinned
+version of the Nuclei templates and unpacks them into a Docker volume, from a container
+without network access. Because a scanned site could redirect to a raw private IP
+address, block private ranges for the scanning network with a firewall (for example in
+the `DOCKER-USER` chain), and keep the consent log only as long as you need it.
+
+### Local lab
+
+To try it without owning a website, the repository ships a lab: OWASP Juice Shop, a
+deliberately vulnerable shop, behind nginx under the fake name `juice.lab`. Its network
+has no route to the internet: the shop and the scanning containers can only talk to each
+other. Lab mode accepts only names ending in `.lab` or `.test` (which can never be real
+internet domains) and only loopback or private addresses.
+
+```bash
+docker compose -f docker-compose.lab.yml up -d   # Juice Shop on http://127.0.0.1:8080
+vigilo prepare-active                            # Nuclei templates, once
+
+# API in lab mode
+VIGILO_ACTIVE_SCAN=1 VIGILO_LAB_TARGETS="juice.lab=http://127.0.0.1:8080" \
+  uvicorn vigilo.api:app --no-server-header --no-proxy-headers
+```
+
+Then ask for a code for `juice.lab` (`POST /api/v1/ownership/challenge`), write it to
+`lab/www/.well-known/vigilo-verification.txt`, verify it with the `file` method, and start
+the scan. On Juice Shop a full scan takes about 9 minutes. Stop the lab with
+`docker compose -f docker-compose.lab.yml down`.
+
 ## Legal and ethics
 
 Checking a system without permission can be a criminal offence, for example under
@@ -279,6 +369,8 @@ the safe side:
   declared size and content type are used. The body is not downloaded, shown or stored.
 - **Polite and identifiable.** At most 3 requests at once, a `Vigilo/<version>`
   User-Agent, and limits per client and per target site.
+- **Active scans need a proof of ownership.** See
+  [Active scan](#active-scan-verified-owners-only).
 - **Nothing stored on the server.** Reports only exist in the response. The rate limiter
   keeps counters in memory for 10 minutes. The optional progress summary lives in the
   visitor's own browser.
@@ -331,6 +423,8 @@ npm run e2e                       # browser tests with accessibility checks
 - [x] Browser tests with automatic accessibility checks
 - [ ] Optional share links, scheduled re-checks and certificate expiry alerts
 - [x] PDF reports, signed reports, WordPress plugin updates, nested SPF lookups
+- [x] Verified active scan: ownership proof, sandboxed Nuclei and ZAP, local lab
+- [ ] Active scan screens in the web interface and its section in the PDF
 - [ ] WordPress plugins checked against a vulnerability database (needs an API key)
 
 ## License

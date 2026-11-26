@@ -13,6 +13,7 @@ import httpx
 import pytest
 
 from vigilo import errors, guidance
+from vigilo.active import jobs
 from vigilo.checks import ALL_CHECKS, cms, email, files, headers, privacy, tls
 from vigilo.checks.base import ScanContext
 from vigilo.i18n import CATALOGS, localize_event, localize_finding, translate
@@ -139,6 +140,7 @@ def all_scenarios() -> list[Finding]:
             description="This check could not be completed, so its results are missing.",
         )
     )
+    findings += [jobs._tool_error(tool) for tool in jobs.STEP_LABELS]
     return [guidance.enrich(f, "shop.example") for f in findings]
 
 
@@ -212,6 +214,17 @@ def test_errors_and_steps_are_translated(language):
         "Enter a website address, for example example.com.",
         CONNECT_STEP["label"],
         *(check.label for check in ALL_CHECKS),
+        errors.ACTIVE_DISABLED,
+        errors.TERMS_NOT_ACCEPTED,
+        errors.ACTIVE_RATE_LIMITED,
+        errors.ACTIVE_TARGET_LIMITED,
+        errors.ACTIVE_ALREADY_RUNNING,
+        errors.ACTIVE_BUSY,
+        errors.ACTIVE_NOT_FOUND,
+        errors.ACTIVE_FAILED,
+        jobs.PROOF_STEP["label"],
+        jobs.ANALYSIS_STEP["label"],
+        *jobs.STEP_LABELS.values(),
     ]
     assert [m for m in messages if translate(m, language) == m] == []
 

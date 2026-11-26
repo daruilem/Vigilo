@@ -362,4 +362,17 @@ MESSAGES: dict[str, str] = {
     "Address": "Adresse",
     "Parameter": "Paramètre",
     "Other affected addresses": "Autres adresses concernées",
+    # Active scan
+    "The active scan is not available on this server.": "L'analyse active n'est pas disponible sur ce serveur.",
+    "Please read and accept the conditions of the active scan first.": "Lisez et acceptez d'abord les conditions de l'analyse active.",
+    "You have reached the number of active scans allowed per day. Try again tomorrow.": "Vous avez atteint le nombre d'analyses actives autorisé par jour. Réessayez demain.",
+    "This website has already had its active scans for today. Try again tomorrow.": "Ce site a déjà eu ses analyses actives pour aujourd'hui. Réessayez demain.",
+    "An active scan of this website is already running. Wait for it to finish.": "Une analyse active de ce site est déjà en cours. Attendez qu'elle se termine.",
+    "The active scanner is busy with another website. Try again in a few minutes.": "L'analyseur actif est occupé avec un autre site. Réessayez dans quelques minutes.",
+    "This active scan does not exist or has expired. Start a new one.": "Cette analyse active n'existe pas ou a expiré. Lancez-en une nouvelle.",
+    "The scanning tools could not run, so there are no results. Try again later.": "Les outils d'analyse n'ont pas pu fonctionner, il n'y a donc aucun résultat. Réessayez plus tard.",
+    "Proof of ownership checked again": "Preuve de propriété vérifiée à nouveau",
+    "Known vulnerabilities and exposed files (Nuclei)": "Vulnérabilités connues et fichiers exposés (Nuclei)",
+    "Crawl of the site and passive analysis (OWASP ZAP)": "Exploration du site et analyse passive (OWASP ZAP)",
+    "Analysis of the results": "Analyse des résultats",
 }

@@ -6,6 +6,16 @@ All notable changes to Vigilo are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Verified active scan** (API, off by default): Nuclei web templates and the OWASP ZAP
+  baseline in throwaway, locked-down Docker containers; proof of ownership checked again
+  at launch; consent log; daily limits; background jobs followed over Server-Sent Events;
+  separate grade, signed report.
+- **Local lab** (`docker-compose.lab.yml`): OWASP Juice Shop as `juice.lab` on a network
+  without internet access, and a lab mode limited to `.lab` and `.test` names.
+- `vigilo prepare-active` installs a pinned version of the Nuclei templates.
+
 ## [0.1.0] - 2026-11-26
 
 First public release: a passive website security check-up.

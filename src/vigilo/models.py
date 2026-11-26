@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -69,6 +69,10 @@ class Finding(BaseModel):
 
 class ScanReport(BaseModel):
     target: str
+    kind: Literal["passive", "active"] = Field(
+        default="passive",
+        description="Passive check-up, or active scan of a verified domain (graded separately).",
+    )
     started_at: datetime
     finished_at: datetime
     score: int = Field(ge=0, le=100)

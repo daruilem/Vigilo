@@ -28,21 +28,26 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi import Path as PathParam
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from vigilo import __version__, errors
+from vigilo import __version__, errors, lab
+from vigilo.active import consent
+from vigilo.active.jobs import JobError, JobManager
+from vigilo.active.runner import ScanPlan
 from vigilo.clientip import client_ip, parse_networks
 from vigilo.errors import ScanError
 from vigilo.i18n import localize_event, localize_report, translate
 from vigilo.models import Platform, ScanReport
-from vigilo.ownership import Method, create_challenge, verify_ownership
+from vigilo.net import make_client
+from vigilo.ownership import Method, check_pass, create_challenge, verify_ownership
 from vigilo.pdf import file_name, render_report
 from vigilo.ratelimit import RateLimiter
 from vigilo.scanner import Event, scan
 from vigilo.signing import sign, verify
-from vigilo.target import parse_target
+from vigilo.target import ensure_public_host, parse_target
 
 logger = logging.getLogger(__name__)
 
@@ -386,7 +391,14 @@ async def ownership_verify(body: VerifyRequest, request: Request) -> VerifyRespo
     """Check the published code. Only contacts the domain if the code was issued for it."""
     domain = _ownership_domain(request, body.target, body.lang)
     try:
-        proof = await verify_ownership(domain, body.token, body.method)
+        lab_target = LAB_TARGETS.get(domain)
+        if lab_target is None:
+            proof = await verify_ownership(domain, body.token, body.method)
+        else:
+            async with make_client(allow_private=True) as http:
+                proof = await verify_ownership(
+                    domain, body.token, body.method, http=http, base_url=lab_target.base_url
+                )
     except ScanError as exc:
         status = 400 if exc.code == "invalid_challenge" else 422
         raise HTTPException(
@@ -397,4 +409,138 @@ async def ownership_verify(body: VerifyRequest, request: Request) -> VerifyRespo
         method=proof.method,
         ownership_pass=proof.token,
         expires_at=proof.expires_at,
+    )
+
+
+# --- Active scan -------------------------------------------------------------------------
+#
+# Off unless VIGILO_ACTIVE_SCAN=1. Starting one requires, in this order: accepted terms, a
+# valid ownership pass for the exact host, a free slot, the daily limits, and finally the
+# proof (DNS record or file) still being in place right now. Removing the proof therefore
+# withdraws the permission, and a copied pass is useless without it.
+
+ACTIVE_ENABLED = os.environ.get("VIGILO_ACTIVE_SCAN", "0") == "1"
+DAY = 24 * 3600
+active_limiter = RateLimiter(_env_int("VIGILO_ACTIVE_SCANS_PER_DAY", 3), DAY)
+active_target_limiter = RateLimiter(_env_int("VIGILO_ACTIVE_SCANS_PER_TARGET", 2), DAY)
+active_jobs = JobManager(_env_int("VIGILO_MAX_ACTIVE_SCANS", 1))
+LAB_TARGETS = lab.load()
+HEARTBEAT_SECONDS = 15
+
+
+class ActiveScanRequest(BaseModel):
+    target: str = Field(min_length=1, max_length=MAX_TARGET_LENGTH)
+    token: str = Field(
+        min_length=1, max_length=MAX_TOKEN_LENGTH, description="The verification code."
+    )
+    ownership_pass: str = Field(min_length=1, max_length=MAX_TOKEN_LENGTH)
+    accept_terms: bool = Field(description="The user accepted the conditions of the active scan.")
+    lang: Language = "en"
+
+
+class ActiveScanStarted(BaseModel):
+    job_id: str
+    domain: str
+
+
+def _refuse(status: int, code: str, message: str, lang: str) -> HTTPException:
+    return HTTPException(status_code=status, detail=_error(code, message, lang))
+
+
+def _pinned_address(addresses: list[str]) -> str:
+    return next((a for a in addresses if ":" not in a), addresses[0])  # IPv4 first
+
+
+async def _plan(domain: str, token: str, method: Method) -> ScanPlan:
+    """Check the proof again, then decide how the tools reach the site."""
+    lab_target = LAB_TARGETS.get(domain)
+    if lab_target is not None:
+        async with make_client(allow_private=True) as http:
+            await verify_ownership(domain, token, method, http=http, base_url=lab_target.base_url)
+        return ScanPlan(domain=domain, target_url=lab_target.scan_url, network=lab_target.network)
+    await verify_ownership(domain, token, method)
+    addresses = await ensure_public_host(domain)
+    return ScanPlan(
+        domain=domain, target_url=f"https://{domain}/", pinned_address=_pinned_address(addresses)
+    )
+
+
+@app.post("/api/v1/active-scans", status_code=202)
+async def start_active_scan(body: ActiveScanRequest, request: Request) -> ActiveScanStarted:
+    lang = body.lang
+    if not ACTIVE_ENABLED:
+        raise _refuse(404, "active_disabled", errors.ACTIVE_DISABLED, lang)
+    if not body.accept_terms:
+        raise _refuse(403, "terms_not_accepted", errors.TERMS_NOT_ACCEPTED, lang)
+    try:
+        domain = parse_target(body.target).hostname
+    except ScanError as exc:
+        raise _refuse(422, exc.code, exc.message, lang) from exc
+    method = check_pass(domain, body.ownership_pass)
+    if method is None:
+        raise _refuse(403, "not_verified", errors.OWNERSHIP_EXPIRED, lang)
+    try:
+        active_jobs.check_can_start(domain)
+    except JobError as exc:
+        raise _refuse(
+            409 if exc.code == "active_already_running" else 503, exc.code, exc.message, lang
+        ) from exc
+    ip = _ip_of(request)
+    if not active_limiter.allow(ip):
+        raise _refuse(429, "rate_limited", errors.ACTIVE_RATE_LIMITED, lang)
+    if not active_target_limiter.allow(domain):
+        raise _refuse(429, "target_rate_limited", errors.ACTIVE_TARGET_LIMITED, lang)
+
+    try:
+        plan = await _plan(domain, body.token, method)
+        job = active_jobs.start(plan, lang)
+    except ScanError as exc:
+        raise _refuse(422, exc.code, exc.message, lang) from exc
+    except JobError as exc:
+        raise _refuse(503, exc.code, exc.message, lang) from exc
+
+    consent.record(
+        "active_scan_started",
+        job=job.id,
+        domain=domain,
+        proof=method.value,
+        client_ip=ip,
+        tools=list(plan.tools),
+        lab=domain in LAB_TARGETS,
+    )
+    return ActiveScanStarted(job_id=job.id, domain=domain)
+
+
+@app.get("/api/v1/active-scans/{job_id}/stream")
+async def stream_active_scan(
+    job_id: str = PathParam(min_length=1, max_length=64), lang: Language = "en"
+) -> StreamingResponse:
+    """Server-Sent Events of a running or finished active scan, from the start."""
+    job = active_jobs.get(job_id) if ACTIVE_ENABLED else None
+
+    async def events() -> AsyncIterator[str]:
+        if job is None:
+            yield _sse("failure", _error("active_not_found", errors.ACTIVE_NOT_FOUND, lang))
+            return
+        stream = job.follow()
+        pending = asyncio.ensure_future(anext(stream))
+        try:
+            while True:
+                done, _ = await asyncio.wait({pending}, timeout=HEARTBEAT_SECONDS)
+                if not done:
+                    yield ": keep-alive\n\n"  # the tools can run for minutes without news
+                    continue
+                try:
+                    name, data = pending.result()
+                except StopAsyncIteration:
+                    return
+                yield _sse(name, data)
+                pending = asyncio.ensure_future(anext(stream))
+        finally:
+            pending.cancel()
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

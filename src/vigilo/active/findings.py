@@ -171,7 +171,7 @@ CATEGORIES: tuple[Category, ...] = (
             "Review the setting named below with your host or developer, and use the "
             "strictest value that still lets the site work."
         ),
-        matches=_any(_tags("misconfig", "misconfiguration", "cors"), _cwe(16, 352, 942, 1021)),
+        matches=_any(_tags("misconfig", "misconfiguration", "cors"), _cwe(16, 264, 352, 942, 1021)),
     ),
 )
 OTHER = Category(

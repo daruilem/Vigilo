@@ -26,6 +26,7 @@ import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum
+from urllib.parse import urlsplit
 
 import dns.asyncresolver
 import dns.exception
@@ -175,8 +176,12 @@ async def _verify_dns(challenge: Challenge, lookup: TxtLookup) -> None:
     )
 
 
-async def _verify_file(challenge: Challenge, http: httpx.AsyncClient) -> None:
-    url = challenge.file_url
+async def _verify_file(
+    challenge: Challenge, http: httpx.AsyncClient, base_url: str | None = None
+) -> None:
+    # `base_url` is only set for a lab host (see vigilo.lab), reached at a local address.
+    url = f"{base_url}{FILE_PATH}" if base_url else challenge.file_url
+    expected_host = urlsplit(url).hostname
     try:
         response = await fetch_page(http, url, MAX_FILE_BYTES)
     except httpx.TooManyRedirects as exc:
@@ -187,7 +192,7 @@ async def _verify_file(challenge: Challenge, http: httpx.AsyncClient) -> None:
         raise OwnershipError(errors.UNREACHABLE, "unreachable") from exc
 
     # A redirect to another host would prove control of that host, not of this domain.
-    if response.request.url.host != challenge.domain:
+    if response.request.url.host != expected_host:
         raise OwnershipError(
             errors.FILE_REDIRECTED.format(url=url, hostname=challenge.domain), "file_redirected"
         )
@@ -205,6 +210,7 @@ async def verify_ownership(
     *,
     lookup: TxtLookup = lookup_txt,
     http: httpx.AsyncClient | None = None,
+    base_url: str | None = None,
     now: float | None = None,
 ) -> OwnershipPass:
     """Check the proof for `domain` and return an ownership pass, or raise OwnershipError.
@@ -220,8 +226,8 @@ async def verify_ownership(
     if method is Method.DNS:
         await _verify_dns(challenge, lookup)
     elif http is not None:
-        await _verify_file(challenge, http)
+        await _verify_file(challenge, http, base_url)
     else:
         async with make_client() as client:
-            await _verify_file(challenge, client)
+            await _verify_file(challenge, client, base_url)
     return issue_pass(domain, method, now=now)

@@ -362,4 +362,17 @@ MESSAGES: dict[str, str] = {
     "Address": "العنوان",
     "Parameter": "المُعامل",
     "Other affected addresses": "عناوين أخرى متأثرة",
+    # Active scan
+    "The active scan is not available on this server.": "الفحص النشط غير متاح على هذا الخادم.",
+    "Please read and accept the conditions of the active scan first.": "يرجى قراءة شروط الفحص النشط والموافقة عليها أولًا.",
+    "You have reached the number of active scans allowed per day. Try again tomorrow.": "لقد بلغت عدد عمليات الفحص النشط المسموح بها يوميًا. حاول مجددًا غدًا.",
+    "This website has already had its active scans for today. Try again tomorrow.": "خضع هذا الموقع بالفعل لعمليات الفحص النشط المسموح بها اليوم. حاول مجددًا غدًا.",
+    "An active scan of this website is already running. Wait for it to finish.": "يجري حاليًا فحص نشط لهذا الموقع. انتظر حتى ينتهي.",
+    "The active scanner is busy with another website. Try again in a few minutes.": "أداة الفحص النشط مشغولة بموقع آخر. حاول مجددًا بعد بضع دقائق.",
+    "This active scan does not exist or has expired. Start a new one.": "هذا الفحص النشط غير موجود أو انتهت صلاحيته. ابدأ فحصًا جديدًا.",
+    "The scanning tools could not run, so there are no results. Try again later.": "تعذّر تشغيل أدوات الفحص، لذلك لا توجد نتائج. حاول مجددًا لاحقًا.",
+    "Proof of ownership checked again": "أُعيد التحقق من إثبات الملكية",
+    "Known vulnerabilities and exposed files (Nuclei)": "الثغرات المعروفة والملفات المكشوفة (Nuclei)",
+    "Crawl of the site and passive analysis (OWASP ZAP)": "استكشاف الموقع والتحليل السلبي (OWASP ZAP)",
+    "Analysis of the results": "تحليل النتائج",
 }

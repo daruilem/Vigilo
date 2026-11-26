@@ -76,3 +76,17 @@ FILE_MISMATCH = (
 FILE_REDIRECTED = (
     "The address {url} redirects to another site. The file must be served directly by {hostname}."
 )
+
+# Active scan.
+ACTIVE_DISABLED = "The active scan is not available on this server."
+TERMS_NOT_ACCEPTED = "Please read and accept the conditions of the active scan first."
+ACTIVE_RATE_LIMITED = (
+    "You have reached the number of active scans allowed per day. Try again tomorrow."
+)
+ACTIVE_TARGET_LIMITED = (
+    "This website has already had its active scans for today. Try again tomorrow."
+)
+ACTIVE_ALREADY_RUNNING = "An active scan of this website is already running. Wait for it to finish."
+ACTIVE_BUSY = "The active scanner is busy with another website. Try again in a few minutes."
+ACTIVE_NOT_FOUND = "This active scan does not exist or has expired. Start a new one."
+ACTIVE_FAILED = "The scanning tools could not run, so there are no results. Try again later."
