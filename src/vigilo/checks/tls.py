@@ -84,6 +84,7 @@ class TlsCheck(Check):
 
 def fetch_certificate(host: str, port: int, address: str) -> CertificateInfo:
     context = ssl.create_default_context()
+    context.minimum_version = ssl.TLSVersion.TLSv1_2  # explicit, whatever the Python default
     with (
         socket.create_connection((address, port), timeout=CONNECT_TIMEOUT) as sock,
         context.wrap_socket(sock, server_hostname=host) as tls,
@@ -92,6 +93,12 @@ def fetch_certificate(host: str, port: int, address: str) -> CertificateInfo:
 
 
 def probe_protocol(host: str, port: int, version: ssl.TLSVersion, address: str) -> bool | None:
+    """Can a handshake be completed with exactly `version`?
+
+    Offering TLS 1.0 and 1.1 here is the point of the check (the server should refuse
+    them), so code scanners flag it on purpose. Only a handshake is made: no request is
+    sent and nothing is read over the connection.
+    """
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.check_hostname = False
     context.verify_mode = ssl.CERT_NONE
