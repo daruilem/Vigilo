@@ -20,3 +20,6 @@ win-ca.pem
 
 # Active scan lab: the verification code is per run
 /lab/www/vigilo-*.txt
+
+# Local data of the start scripts (consent log of active scans)
+/.vigilo/

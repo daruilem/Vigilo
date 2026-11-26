@@ -70,6 +70,13 @@ self-hosted at build time, so visitors' browsers never contact Google. Browser t
 
 ## Quick start
 
+### Windows: double-click
+
+After the first installation (see *Local development* below), double-click
+**`Start Vigilo.cmd`** at the root of the repository: the API and the website start in two
+windows and the browser opens. **`Start Vigilo (active scan).cmd`** does the same with the
+active scan on (open Docker Desktop first). Close the two windows to stop Vigilo.
+
 ### Docker
 
 ```bash
