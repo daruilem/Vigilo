@@ -7,14 +7,22 @@ updates:
     groups:
       python:
         patterns: ["*"]
+        update-types: [minor, patch]
 
   - package-ecosystem: npm
     directory: /web
     schedule:
       interval: weekly
     groups:
+      # Minor and patch updates together; each major update gets its own pull request,
+      # so one breaking package does not hold back the others.
       web:
         patterns: ["*"]
+        update-types: [minor, patch]
+    ignore:
+      # typescript-eslint (used by eslint-config-next) does not support TypeScript 7 yet.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
