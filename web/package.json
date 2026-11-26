@@ -13,13 +13,13 @@
   },
   "dependencies": {
     "next": "16.4.6",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.1",
     "@playwright/test": "^1.65.1",
-    "@tailwindcss/turbopack": "4.3.3",
+    "@tailwindcss/turbopack": "4.3.5",
     "@testing-library/jest-dom": "^8.0.0",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.13",
@@ -30,7 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "jsdom": "^29.1.1",
-    "tailwindcss": "4.3.3",
+    "tailwindcss": "4.3.5",
     "typescript": "^5",
     "vitest": "^5.1.1"
   }
