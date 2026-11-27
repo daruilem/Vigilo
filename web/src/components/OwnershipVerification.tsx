@@ -251,7 +251,7 @@ export function OwnershipVerification({ target, onActiveReport, hostedPlatform }
               )}
             </Step>
 
-            <Step number={3} done={proof !== null}>
+            <Step number={3} done={proof !== null} showDone={false}>
               <h3 ref={verifiedHeading} tabIndex={-1} className={proof ? "font-semibold" : "font-semibold text-muted"}>
                 {proof ? a.verified(proof.domain) : a.steps.verified}
               </h3>
@@ -472,14 +472,25 @@ function ChoiceGroup<T extends string>({
   );
 }
 
-function Step({ number, done, children }: { number: number; done: boolean; children: React.ReactNode }) {
+function Step({
+  number,
+  done,
+  showDone = true,
+  children,
+}: {
+  number: number;
+  done: boolean;
+  /** The last step says it in its heading. */
+  showDone?: boolean;
+  children: React.ReactNode;
+}) {
   const { t } = useI18n();
   return (
     <li className="grid grid-cols-[32px_minmax(0,1fr)] gap-x-3 border-b border-rule py-4">
       <span className="font-mono text-sm leading-6">{number}</span>
       <div className="min-w-0">
         {children}
-        {done && <p className="mt-1 font-mono text-[13px] text-pass">{t.active.stepDone}</p>}
+        {done && showDone && <p className="mt-1 font-mono text-[13px] text-pass">{t.active.stepDone}</p>}
       </div>
     </li>
   );

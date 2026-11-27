@@ -580,7 +580,13 @@ def render_report(
             left_width,
         ),
         writer.para(f"{labels.method}: {method_value}", meta, left_width),
-        writer.para(f"{labels.hosting}: {PLATFORM_NAMES[platform.value]}", meta, left_width),
+    ]
+    # The hosting only matters when some fix depends on it (never for active scan results).
+    if any(f.fixes for f in issues):
+        left.append(
+            writer.para(f"{labels.hosting}: {PLATFORM_NAMES[platform.value]}", meta, left_width)
+        )
+    left += [
         Spacer(1, 8),
         writer.para(labels.issues(len(issues)), writer.style("Sans-SemiBold", 11, INK), left_width),
     ]
