@@ -62,6 +62,8 @@ describe("OwnershipVerification", () => {
   it("writes the message for whoever runs the website", async () => {
     const { user, fetchMock } = setup([json(challenge)]);
     await user.click(screen.getByRole("button", { name: a.start }));
+    // The code arrives asynchronously: wait for it before going on.
+    await screen.findByRole("heading", { name: a.steps.publish });
     expect(bodyOf(fetchMock, 0)).toEqual({
       url: "http://localhost:8000/api/v1/ownership/challenge",
       body: { target: "shop.example", lang: "en" },
@@ -85,6 +87,8 @@ describe("OwnershipVerification", () => {
   it("shows each method with the values to copy and its guides", async () => {
     const { user } = setup([json(challenge)]);
     await user.click(screen.getByRole("button", { name: a.start }));
+    // The code arrives asynchronously: wait for it before going on.
+    await screen.findByRole("heading", { name: a.steps.publish });
     await user.click(screen.getByRole("radio", { name: new RegExp(a.who.me) }));
 
     expect(screen.getByRole("radio", { name: new RegExp(a.methods.meta) })).toBeChecked();
@@ -104,6 +108,8 @@ describe("OwnershipVerification", () => {
   it("checks every method at once, says what is missing, then confirms", async () => {
     const { user, fetchMock } = setup([json(challenge), json(notYet, 422), json(proof)]);
     await user.click(screen.getByRole("button", { name: a.start }));
+    // The code arrives asynchronously: wait for it before going on.
+    await screen.findByRole("heading", { name: a.steps.publish });
 
     await user.click(screen.getByRole("button", { name: a.verify }));
     expect(bodyOf(fetchMock, 1).body).toEqual({ target: "shop.example", token: TOKEN, method: "auto", lang: "en" });
@@ -119,6 +125,8 @@ describe("OwnershipVerification", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const { user, fetchMock } = setup([json(challenge), json(notYet, 422), json(proof)], null, true);
     await user.click(screen.getByRole("button", { name: a.start }));
+    // The code arrives asynchronously: wait for it before going on.
+    await screen.findByRole("heading", { name: a.steps.publish });
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     await act(async () => vi.advanceTimersByTime(30_000));
