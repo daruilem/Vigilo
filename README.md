@@ -58,7 +58,8 @@ strictly for results, and every technical value set in monospace.
   report (date, score, grade, problem names) in `localStorage`. The next check of the same
   site shows what was fixed, what is new and how the score moved. Opt-in only (German
   TDDDG § 25), never sent to the server, removable with one button.
-- **Method**: the exact list of checks, the limits of the tool and what is kept.
+- **Method**: the exact list of checks, how the active scan is kept safe, the limits of
+  the tool and what is kept.
 - **Four languages**: English (default), French, German and Arabic, with a full
   right-to-left layout for Arabic. Addresses carry the language (`/en`, `/fr`, `/de`,
   `/ar`) so a shared link opens in the right language.

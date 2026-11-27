@@ -337,7 +337,7 @@ export const de: Messages = {
     rail: "Methode",
     title: "So funktioniert die Prüfung",
     intro:
-      "Vigilo betrachtet nur, was der Browser jedes Besuchers sehen kann. Es versucht nie einzudringen, Passwörter zu erraten oder Formulare abzusenden.",
+      "Der Sicherheitscheck betrachtet nur, was der Browser jedes Besuchers sehen kann. Er versucht nie einzudringen, Passwörter zu erraten oder Formulare abzuschicken. Der optionale aktive Scan geht weiter, und nur für Inhaber, die nachgewiesen haben, dass die Domain ihnen gehört.",
     sections: [
       {
         label: "Was geprüft wird",
@@ -368,6 +368,20 @@ export const de: Messages = {
         ],
       },
       {
+        label: "Aktiver Scan",
+        title: "Weiter gehen, nur auf verifizierten Domains",
+        items: [
+          "Wenn dieser Dienst ihn anbietet, sendet ein optionaler aktiver Scan Testanfragen mit zwei bekannten Open-Source-Werkzeugen: Nuclei (bekannte Schwachstellen, offene Dateien und Verwaltungsseiten) und der Baseline von OWASP ZAP (ein kurzes Durchsuchen der Website, dann passive Regeln). Er dauert etwa 10 Minuten.",
+          "Es laufen nur ungefährliche Prüfungen: kein Denial of Service, kein Erraten von Passwörtern, kein Fuzzing, keine Ausnutzung und keine Aufrufe externer Server. Höchstens 20 Anfragen pro Sekunde.",
+          "Er läuft nur auf einer Domain, deren Inhaber die Kontrolle nachgewiesen hat, wie in der Google Search Console: ein HTML-Tag auf der Startseite, eine Datei im Hauptverzeichnis der Website oder ein DNS-Eintrag. Vigilo kann die Anfrage für die Person schreiben, die die Website betreut, und sucht den Code selbstständig.",
+          "Der Nachweis wird kurz vor jedem Scan erneut geprüft: Wer den Tag, die Datei oder den Eintrag entfernt, widerruft die Erlaubnis. Ein Nachweis gilt 24 Stunden.",
+          "Nur der genau verifizierte Name wird gescannt: beispiel.de umfasst nicht shop.beispiel.de. Die Werkzeuge können keiner Weiterleitung auf eine andere Website folgen.",
+          "Jedes Werkzeug läuft in einem eigenen, kurzlebigen und abgeschotteten Container mit begrenztem Speicher und begrenzter Zeit und wird am Ende beendet.",
+          "Websites auf Shopify, Wix, Squarespace oder Webflow wird der aktive Scan nicht angeboten: Er würde die Server der Plattform testen, was deren Bedingungen verbieten.",
+          "Ergebnisse behalten nur die Adresse, den Parameternamen und die Beschreibung des Problems durch das Werkzeug, nie Inhalte der Website. Probleme, die der Sicherheitscheck schon meldet, werden nicht doppelt gezählt.",
+        ],
+      },
+      {
         label: "Grenzen",
         title: "Was diese Prüfung nicht sagen kann",
         items: [
@@ -378,6 +392,7 @@ export const de: Messages = {
           "Themes, Ihr Code sowie Plugins, die ihre Version verbergen oder nicht auf wordpress.org stehen, werden nicht geprüft. DKIM-Schlüssel mit ungewöhnlichen Namen werden nicht gefunden.",
           "Tracker und Links, die nach dem Laden per JavaScript hinzukommen, werden nicht erkannt.",
           "Rechtliche Punkte suchen nur nach Links auf der Startseite. Sie sind ein Hinweis, keine Rechtsberatung.",
+          "Auch der aktive Scan ist kein Penetrationstest: Es gibt keinen Menschen und keine Ausnutzung. Probleme, für die man sich anmelden oder Formulare angreifen müsste, bleiben unsichtbar.",
         ],
       },
       {
@@ -388,6 +403,8 @@ export const de: Messages = {
           "Wenn Sie Auf diesem Gerät merken wählen, speichert Ihr Browser eine kurze Zusammenfassung des Berichts (Datum, Punkte, Note und die Namen der Probleme), um beim nächsten Mal Ihren Fortschritt zu zeigen. Sie wird nie an Vigilo gesendet, und Diese Website vergessen löscht sie.",
           "Zum Schutz vor Missbrauch zählt der Dienst Prüfungen pro IP-Adresse. Dieser Zähler bleibt 10 Minuten im Arbeitsspeicher und wird dann vergessen.",
           "PDF-Dateien werden beim Herunterladen erstellt und nicht auf dem Server gespeichert. Jeder Bericht trägt eine Signatur, daher lässt sich ein veränderter Bericht nicht als PDF erstellen.",
+          "Für jeden aktiven Scan speichert Vigilo Datum, Domain, verwendeten Nachweis und Ihre IP-Adresse, um festzuhalten, wer ihn angefordert hat. Sonst wird nichts über den Scan gespeichert.",
+          "Solange Sie auf die Veröffentlichung eines Verifizierungscodes warten, behält Ihr Browser ihn, damit Sie später wiederkommen können. Er wird nach der Verifizierung oder dem Ablauf gelöscht.",
         ],
       },
       {
@@ -396,6 +413,7 @@ export const de: Messages = {
         items: [
           "Jede Website startet mit 100 Punkten. Jedes Problem zieht Punkte ab: kritisch 40, hoch 20, mittel 10, niedrig 3. Eine Warnung zieht die Hälfte ab.",
           "Datenschutz- und Rechtspunkte stehen im Bericht, ändern die Note aber nicht.",
+          "Der aktive Scan wird genauso bewertet, mit einer eigenen Note: Die Note des Sicherheitschecks bleibt zwischen Websites vergleichbar.",
         ],
       },
     ],

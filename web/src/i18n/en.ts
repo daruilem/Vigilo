@@ -358,7 +358,7 @@ export const en = {
     rail: "Method",
     title: "How the check works",
     intro:
-      "Vigilo only looks at what any visitor's browser can see. It never tries to break in, guess passwords or send forms.",
+      "The check-up only looks at what any visitor's browser can see. It never tries to break in, guess passwords or send forms. The optional active scan goes further, and only for owners who proved that the domain is theirs.",
     sections: [
       {
         label: "What is checked",
@@ -389,6 +389,20 @@ export const en = {
         ],
       },
       {
+        label: "Active scan",
+        title: "Going further, on verified domains only",
+        items: [
+          "When this service offers it, an optional active scan sends test requests with two well-known open-source tools: Nuclei (known vulnerabilities, exposed files and admin pages) and the OWASP ZAP baseline (a short crawl of the site, then passive rules). It takes about 10 minutes.",
+          "Only safe checks run: no denial of service, no password guessing, no fuzzing, no exploitation and no calls to outside servers. At most 20 requests per second.",
+          "It only runs on a domain whose owner proved control of it, the way Google Search Console does it: an HTML tag in the home page, a file at the root of the site, or a DNS record. Vigilo can write the request for whoever runs the site, and looks for the code by itself.",
+          "The proof is checked again just before each scan: removing the tag, the file or the record withdraws the permission. A proof is valid for 24 hours.",
+          "Only the exact verified name is scanned: example.com does not cover shop.example.com. The tools cannot follow a redirect to another site.",
+          "Each tool runs in its own short-lived, locked-down container, with limited memory and time, and is stopped at the end.",
+          "Sites on Shopify, Wix, Squarespace or Webflow are not offered the active scan: it would test the platform's own servers, which their terms forbid.",
+          "Results keep only the address, the parameter name and the tool's description of the problem, never content from the site. Problems the check-up already reports are not counted twice.",
+        ],
+      },
+      {
         label: "Limits",
         title: "What this check cannot tell you",
         items: [
@@ -399,6 +413,7 @@ export const en = {
           "Themes, your code, and plugins that hide their version or are not on wordpress.org are not checked. DKIM keys with unusual names cannot be found.",
           "Trackers and links added by JavaScript after the page loads are not seen.",
           "Legal points only look for links on the home page. They are a reminder, not legal advice.",
+          "The active scan is not a penetration test either: there is no human and no exploitation. Problems that need logging in or attacking forms stay invisible.",
         ],
       },
       {
@@ -409,6 +424,8 @@ export const en = {
           "If you choose Remember on this device, your browser keeps a short summary of the report (date, score, grade and the names of the problems) to show your progress next time. It is never sent to Vigilo, and Forget this website removes it.",
           "To prevent abuse, the service counts checks per IP address. This count is kept in memory for 10 minutes, then forgotten.",
           "PDF files are created when you click Download and are not kept on the server. Each report carries a signature, so a modified report cannot be turned into a PDF.",
+          "For each active scan, Vigilo records the date, the domain, the proof used and your IP address, to show who asked for it. Nothing else about the scan is kept.",
+          "While you wait for a verification code to be published, your browser keeps it, so you can come back later. It is removed once verified or expired.",
         ],
       },
       {
@@ -417,6 +434,7 @@ export const en = {
         items: [
           "Every site starts at 100 points. Each problem removes points: critical 40, high 20, medium 10, low 3. A warning removes half.",
           "Privacy and legal points are listed in the report but do not change the grade.",
+          "The active scan is graded the same way, with a grade of its own: the check-up grade stays comparable between sites.",
         ],
       },
     ],

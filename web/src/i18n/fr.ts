@@ -337,7 +337,7 @@ export const fr: Messages = {
     rail: "Méthode",
     title: "Comment fonctionne l'analyse",
     intro:
-      "Vigilo ne regarde que ce que le navigateur de n'importe quel visiteur peut voir. Il n'essaie jamais d'entrer, de deviner des mots de passe ou d'envoyer des formulaires.",
+      "Le bilan ne regarde que ce que le navigateur de n'importe quel visiteur peut voir. Il n'essaie jamais d'entrer, de deviner des mots de passe ni d'envoyer des formulaires. L'analyse active, facultative, va plus loin, et seulement pour les propriétaires qui ont prouvé que le domaine est à eux.",
     sections: [
       {
         label: "Ce qui est vérifié",
@@ -368,6 +368,20 @@ export const fr: Messages = {
         ],
       },
       {
+        label: "Analyse active",
+        title: "Aller plus loin, sur des domaines vérifiés seulement",
+        items: [
+          "Quand ce service la propose, une analyse active facultative envoie des requêtes de test avec deux outils libres reconnus : Nuclei (vulnérabilités connues, fichiers et pages d'administration exposés) et la base d'OWASP ZAP (une courte exploration du site, puis des règles passives). Elle dure environ 10 minutes.",
+          "Seules des vérifications sans danger sont lancées : pas de déni de service, pas d'essai de mots de passe, pas de fuzzing, pas d'exploitation et aucun appel à des serveurs extérieurs. 20 requêtes par seconde au maximum.",
+          "Elle ne s'exécute que sur un domaine dont le propriétaire a prouvé le contrôle, comme dans Google Search Console : une balise HTML dans la page d'accueil, un fichier à la racine du site ou un enregistrement DNS. Vigilo peut rédiger la demande pour la personne qui gère le site, et cherche le code tout seul.",
+          "La preuve est vérifiée à nouveau juste avant chaque analyse : retirer la balise, le fichier ou l'enregistrement retire l'autorisation. Une preuve est valable 24 heures.",
+          "Seul le nom exact vérifié est analysé : exemple.fr ne couvre pas boutique.exemple.fr. Les outils ne peuvent pas suivre une redirection vers un autre site.",
+          "Chaque outil tourne dans son propre conteneur éphémère et verrouillé, avec une mémoire et une durée limitées, et il est arrêté à la fin.",
+          "Les sites sur Shopify, Wix, Squarespace ou Webflow ne se voient pas proposer l'analyse active : elle testerait les serveurs de la plateforme, ce que leurs conditions interdisent.",
+          "Les résultats ne gardent que l'adresse, le nom du paramètre et la description du problème par l'outil, jamais de contenu du site. Les problèmes déjà signalés par le bilan ne sont pas comptés deux fois.",
+        ],
+      },
+      {
         label: "Limites",
         title: "Ce que cette analyse ne peut pas vous dire",
         items: [
@@ -378,6 +392,7 @@ export const fr: Messages = {
           "Les thèmes, votre code, et les extensions qui masquent leur version ou ne sont pas sur wordpress.org ne sont pas vérifiés. Les clés DKIM aux noms inhabituels ne peuvent pas être trouvées.",
           "Les traceurs et liens ajoutés par JavaScript après le chargement de la page ne sont pas vus.",
           "Les points juridiques ne cherchent que des liens sur la page d'accueil. C'est un rappel, pas un conseil juridique.",
+          "L'analyse active n'est pas non plus un test d'intrusion : il n'y a ni humain ni exploitation. Les problèmes qui demandent de se connecter ou d'attaquer des formulaires restent invisibles.",
         ],
       },
       {
@@ -388,6 +403,8 @@ export const fr: Messages = {
           "Si vous choisissez Mémoriser sur cet appareil, votre navigateur garde un court résumé du rapport (date, score, note et noms des problèmes) pour montrer vos progrès la prochaine fois. Il n'est jamais envoyé à Vigilo, et Oublier ce site le supprime.",
           "Pour éviter les abus, le service compte les analyses par adresse IP. Ce compteur est gardé en mémoire 10 minutes, puis oublié.",
           "Les PDF sont créés au moment du téléchargement et ne sont pas conservés sur le serveur. Chaque rapport porte une signature : un rapport modifié ne peut pas être converti en PDF.",
+          "Pour chaque analyse active, Vigilo enregistre la date, le domaine, la preuve utilisée et votre adresse IP, pour savoir qui l'a demandée. Rien d'autre n'est conservé sur l'analyse.",
+          "Pendant que vous attendez la publication d'un code de vérification, votre navigateur le garde, pour que vous puissiez revenir plus tard. Il est supprimé une fois vérifié ou expiré.",
         ],
       },
       {
@@ -396,6 +413,7 @@ export const fr: Messages = {
         items: [
           "Chaque site part de 100 points. Chaque problème retire des points : critique 40, élevé 20, moyen 10, faible 3. Un avertissement en retire la moitié.",
           "Les points de vie privée et juridiques figurent dans le rapport mais ne changent pas la note.",
+          "L'analyse active est notée de la même façon, avec sa propre note : la note du bilan reste comparable d'un site à l'autre.",
         ],
       },
     ],

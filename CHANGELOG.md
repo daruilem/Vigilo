@@ -28,6 +28,8 @@ All notable changes to Vigilo are listed here. The format follows
 
 ### Changed
 
+- The Method page explains the active scan: tools, safe checks only, proof of ownership,
+  scope, isolation, hosted platforms, separate grade and what is kept.
 - The ownership file moved from `/.well-known/vigilo-verification.txt` to
   `/vigilo-<id>.txt` at the root, easier to upload.
 
